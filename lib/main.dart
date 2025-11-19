@@ -7,6 +7,7 @@ import 'package:lotto_vision/core/theme/app_theme.dart';
 import 'package:lotto_vision/presentation/screens/home/home_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:lotto_vision/core/di/injection_container.dart' as di;
+import 'package:lotto_vision/presentation/providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,17 +31,19 @@ void main() async {
   );
 }
 
-class LottoVisionApp extends StatelessWidget {
+class LottoVisionApp extends ConsumerWidget {
   const LottoVisionApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeProvider);
+
     return MaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: themeMode,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
