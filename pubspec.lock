@@ -680,7 +680,7 @@ packages:
     source: hosted
     version: "0.11.1"
   google_mlkit_text_recognition:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: google_mlkit_text_recognition
       sha256: "179349417066fa2c275d7a6ed6cbceeb7fa265d73aacdb2d732f1a2991face0a"
@@ -1386,7 +1386,7 @@ packages:
     source: hosted
     version: "1.4.0"
   uuid:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: uuid
       sha256: a11b666489b1954e01d992f3d601b1804a33937b5a8fe677bd26b8a9f96f96e8

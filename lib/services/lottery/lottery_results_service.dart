@@ -95,7 +95,7 @@ class LotteryResultsService {
   List<int> _extractWinningNumbers(String html) {
     // Extract winning numbers using regex patterns
     // Pattern example: class="winning-number">12</span>
-    final pattern = RegExp(r'winning-number["\']?>(\d{1,2})<');
+    final pattern = RegExp(r'winning-number["\x27]?>(\d{1,2})<');
     final matches = pattern.allMatches(html);
 
     final numbers = matches

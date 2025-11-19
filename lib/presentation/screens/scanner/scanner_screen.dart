@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lotto_vision/core/di/injection_container.dart';
-import 'package:lotto_vision/domain/entities/lottery_ticket.dart';
 import 'package:lotto_vision/domain/usecases/scan_ticket.dart';
 import 'package:lotto_vision/presentation/screens/results/ticket_detail_screen.dart';
 
@@ -18,7 +17,6 @@ class ScannerScreen extends ConsumerStatefulWidget {
 class _ScannerScreenState extends ConsumerState<ScannerScreen> {
   bool _isScanning = true;
   String? _errorMessage;
-  LotteryTicket? _ticket;
 
   @override
   void initState() {
@@ -43,9 +41,10 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
         });
       },
       (ticket) {
+        if (!mounted) return;
+
         setState(() {
           _isScanning = false;
-          _ticket = ticket;
         });
 
         // Navigate to ticket details
