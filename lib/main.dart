@@ -6,8 +6,10 @@ import 'package:lotto_vision/core/constants/app_constants.dart';
 import 'package:lotto_vision/core/theme/app_theme.dart';
 import 'package:lotto_vision/presentation/screens/home/home_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:lotto_vision/l10n/app_localizations.dart';
 import 'package:lotto_vision/core/di/injection_container.dart' as di;
 import 'package:lotto_vision/presentation/providers/theme_provider.dart';
+import 'package:lotto_vision/presentation/providers/locale_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +39,7 @@ class LottoVisionApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeProvider);
+    final locale = ref.watch(localeProvider);
 
     return MaterialApp(
       title: AppConstants.appName,
@@ -44,7 +47,9 @@ class LottoVisionApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
+      locale: locale,
       localizationsDelegates: const [
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,

@@ -4,6 +4,7 @@ import 'package:lotto_vision/presentation/screens/camera/camera_screen.dart';
 import 'package:lotto_vision/presentation/screens/history/history_screen.dart';
 import 'package:lotto_vision/presentation/screens/results/results_screen.dart';
 import 'package:lotto_vision/presentation/screens/settings/settings_screen.dart';
+import 'package:lotto_vision/l10n/app_localizations.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -24,6 +25,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: _screens[_currentIndex],
       bottomNavigationBar: NavigationBar(
@@ -33,26 +36,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             _currentIndex = index;
           });
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
+            label: l10n.home,
           ),
           NavigationDestination(
-            icon: Icon(Icons.emoji_events_outlined),
-            selectedIcon: Icon(Icons.emoji_events),
-            label: 'Results',
+            icon: const Icon(Icons.emoji_events_outlined),
+            selectedIcon: const Icon(Icons.emoji_events),
+            label: l10n.results,
           ),
           NavigationDestination(
-            icon: Icon(Icons.history),
-            selectedIcon: Icon(Icons.history),
-            label: 'History',
+            icon: const Icon(Icons.history),
+            selectedIcon: const Icon(Icons.history),
+            label: l10n.history,
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: l10n.settings,
           ),
         ],
       ),
@@ -65,9 +68,11 @@ class HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('LottoVision'),
+        title: Text(l10n.appName),
         actions: [
           IconButton(
             icon: const Icon(Icons.info_outline),
@@ -95,13 +100,13 @@ class HomeTab extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Scan Your Lottery Ticket',
+                        l10n.scanTicket,
                         style: Theme.of(context).textTheme.headlineSmall,
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Take a photo or choose from gallery to check your winning status',
+                        l10n.takePhoto,
                         style: Theme.of(context).textTheme.bodyMedium,
                         textAlign: TextAlign.center,
                       ),
@@ -116,7 +121,7 @@ class HomeTab extends StatelessWidget {
                           );
                         },
                         icon: const Icon(Icons.camera_alt),
-                        label: const Text('Scan Ticket'),
+                        label: Text(l10n.scan),
                       ),
                     ],
                   ),

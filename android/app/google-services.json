@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1083884034428",
+    "project_id": "lottovision-15305",
+    "storage_bucket": "lottovision-15305.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1083884034428:android:563a6f7201f96920b12cf9",
+        "android_client_info": {
+          "package_name": "com.example.lottovision"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-BeySPnu1dE5SJm3H_MOyL-wFaH1JLrw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

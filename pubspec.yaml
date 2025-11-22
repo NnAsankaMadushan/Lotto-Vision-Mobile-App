@@ -80,6 +80,10 @@ dev_dependencies:
   integration_test:
     sdk: flutter
 
+  # App Icon & Splash Screen
+  flutter_launcher_icons: ^0.14.1
+  flutter_native_splash: ^2.4.2
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -91,3 +95,22 @@ flutter:
     - assets/lottie/
 
   generate: true
+
+# App Icon Configuration
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/logo.png"
+
+# Splash Screen Configuration
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: "assets/images/logo.png"
+  android: true
+  ios: true
+  web: false
+  android_12:
+    image: "assets/images/logo.png"
+    color: "#FFFFFF"
