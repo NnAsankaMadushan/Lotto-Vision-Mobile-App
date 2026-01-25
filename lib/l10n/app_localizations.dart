@@ -399,6 +399,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No internet connection'**
   String get noInternetConnection;
+
+  /// No description provided for @lotteryAdaSampatha.
+  ///
+  /// In en, this message translates to:
+  /// **'Ada Sampatha'**
+  String get lotteryAdaSampatha;
+
+  /// No description provided for @lotteryDaruDiriSampatha.
+  ///
+  /// In en, this message translates to:
+  /// **'Daru Diri Sampatha'**
+  String get lotteryDaruDiriSampatha;
+
+  /// No description provided for @lotteryDelakshapathi.
+  ///
+  /// In en, this message translates to:
+  /// **'Delakshapathi Double Dreams'**
+  String get lotteryDelakshapathi;
+
+  /// No description provided for @lotteryDhanaNidhanaya.
+  ///
+  /// In en, this message translates to:
+  /// **'Dhana Nidhanaya'**
+  String get lotteryDhanaNidhanaya;
+
+  /// No description provided for @lotteryDollarFortune.
+  ///
+  /// In en, this message translates to:
+  /// **'Dollar Fortune'**
+  String get lotteryDollarFortune;
+
+  /// No description provided for @lotteryGovisetha.
+  ///
+  /// In en, this message translates to:
+  /// **'Govisetha'**
+  String get lotteryGovisetha;
+
+  /// No description provided for @lotteryHandahana.
+  ///
+  /// In en, this message translates to:
+  /// **'Handahana'**
+  String get lotteryHandahana;
+
+  /// No description provided for @lotteryJathika.
+  ///
+  /// In en, this message translates to:
+  /// **'Jathika Sampatha'**
+  String get lotteryJathika;
+
+  /// No description provided for @lotteryMahajana.
+  ///
+  /// In en, this message translates to:
+  /// **'Mahajana Sampatha'**
+  String get lotteryMahajana;
+
+  /// No description provided for @lotteryMega60.
+  ///
+  /// In en, this message translates to:
+  /// **'Mega 60'**
+  String get lotteryMega60;
+
+  /// No description provided for @lotteryMegaMillions.
+  ///
+  /// In en, this message translates to:
+  /// **'Mega Millions'**
+  String get lotteryMegaMillions;
+
+  /// No description provided for @lotteryMegaPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Mega Power'**
+  String get lotteryMegaPower;
+
+  /// No description provided for @lotteryNeeroga.
+  ///
+  /// In en, this message translates to:
+  /// **'Neeroga Lagna Jaya'**
+  String get lotteryNeeroga;
+
+  /// No description provided for @lotteryNlbJaya.
+  ///
+  /// In en, this message translates to:
+  /// **'NLB Jaya'**
+  String get lotteryNlbJaya;
+
+  /// No description provided for @lotterySampathRekha.
+  ///
+  /// In en, this message translates to:
+  /// **'Sampath Rekha'**
+  String get lotterySampathRekha;
+
+  /// No description provided for @lotterySampathaLagnaVarama.
+  ///
+  /// In en, this message translates to:
+  /// **'Sampatha Lagna Varama'**
+  String get lotterySampathaLagnaVarama;
+
+  /// No description provided for @lotterySevana.
+  ///
+  /// In en, this message translates to:
+  /// **'Sevana'**
+  String get lotterySevana;
+
+  /// No description provided for @lotteryShanida.
+  ///
+  /// In en, this message translates to:
+  /// **'Shanida'**
+  String get lotteryShanida;
+
+  /// No description provided for @lotterySubaDawasak.
+  ///
+  /// In en, this message translates to:
+  /// **'Suba Dawasak'**
+  String get lotterySubaDawasak;
+
+  /// No description provided for @lotterySuperFifty.
+  ///
+  /// In en, this message translates to:
+  /// **'Vasana Super Fifty'**
+  String get lotterySuperFifty;
+
+  /// No description provided for @lotterySupiriVasana.
+  ///
+  /// In en, this message translates to:
+  /// **'Supiri Vasana'**
+  String get lotterySupiriVasana;
+
+  /// No description provided for @lotteryVasana.
+  ///
+  /// In en, this message translates to:
+  /// **'Vasana Sampatha'**
+  String get lotteryVasana;
+
+  /// No description provided for @lotteryUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get lotteryUnknown;
 }
 
 class _AppLocalizationsDelegate

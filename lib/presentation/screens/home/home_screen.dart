@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lotto_vision/core/constants/lottery_types.dart';
 import 'package:lotto_vision/presentation/screens/camera/camera_screen.dart';
 import 'package:lotto_vision/presentation/screens/history/history_screen.dart';
 import 'package:lotto_vision/presentation/screens/results/results_screen.dart';
@@ -133,11 +134,11 @@ class HomeTab extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 12),
-              _buildLotteryTypeCard(context, 'Mahajana Sampatha', Icons.stars),
-              _buildLotteryTypeCard(context, 'Govisetha', Icons.star),
-              _buildLotteryTypeCard(context, 'Dhana Nidhanaya', Icons.monetization_on),
-              _buildLotteryTypeCard(context, 'Jathika Sampatha', Icons.flag),
-              _buildLotteryTypeCard(context, 'Mega Power', Icons.flash_on),
+              _buildLotteryTypeCard(context, LotteryType.mahajana.displayName, Icons.stars),
+              _buildLotteryTypeCard(context, LotteryType.govisetha.displayName, Icons.star),
+              _buildLotteryTypeCard(context, LotteryType.dhanaNidhanaya.displayName, Icons.monetization_on),
+              _buildLotteryTypeCard(context, LotteryType.jathika.displayName, Icons.flag),
+              _buildLotteryTypeCard(context, LotteryType.megaPower.displayName, Icons.flash_on),
               const SizedBox(height: 16),
               Card(
                 color: Theme.of(context).colorScheme.primaryContainer,

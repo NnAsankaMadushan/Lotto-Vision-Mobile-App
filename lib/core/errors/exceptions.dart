@@ -37,3 +37,8 @@ class PermissionException implements Exception {
   final String message;
   const PermissionException([this.message = 'Permission denied']);
 }
+
+class ResultsNotFoundException implements Exception {
+  final String message;
+  const ResultsNotFoundException([this.message = 'Results not found']);
+}

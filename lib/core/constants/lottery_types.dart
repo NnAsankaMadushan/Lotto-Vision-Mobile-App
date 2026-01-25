@@ -1,23 +1,97 @@
+import 'package:lotto_vision/l10n/app_localizations.dart';
+
 /// Sri Lankan Lottery Types
 enum LotteryType {
-  mahajana('Mahajana Sampatha'),
-  govisetha('Govisetha'),
-  dhanaNidhanaya('Dhana Nidhanaya'),
-  jathika('Jathika Sampatha'),
-  megaPower('Mega Power'),
-  shanida('Shanida'),
-  vasana('Vasana Sampatha'),
-  unknown('Unknown');
+  adaSampatha('Ada Sampatha', 'lotteryAdaSampatha'),
+  daruDiriSampatha('Daru Diri Sampatha', 'lotteryDaruDiriSampatha'),
+  delakshapathi('Delakshapathi Double Dreams', 'lotteryDelakshapathi'),
+  dhanaNidhanaya('Dhana Nidhanaya', 'lotteryDhanaNidhanaya'),
+  dollarFortune('Dollar Fortune', 'lotteryDollarFortune'),
+  govisetha('Govisetha', 'lotteryGovisetha'),
+  handahana('Handahana', 'lotteryHandahana'),
+  jathika('Jathika Sampatha', 'lotteryJathika'),
+  mahajana('Mahajana Sampatha', 'lotteryMahajana'),
+  mega60('Mega 60', 'lotteryMega60'),
+  megaMillions('Mega Millions', 'lotteryMegaMillions'),
+  megaPower('Mega Power', 'lotteryMegaPower'),
+  neeroga('Neeroga Lagna Jaya', 'lotteryNeeroga'),
+  nlbJaya('NLB Jaya', 'lotteryNlbJaya'),
+  sampathRekha('Sampath Rekha', 'lotterySampathRekha'),
+  sampathaLagnaVarama('Sampatha Lagna Varama', 'lotterySampathaLagnaVarama'),
+  sevana('Sevana', 'lotterySevana'),
+  shanida('Shanida', 'lotteryShanida'),
+  subaDawasak('Suba Dawasak', 'lotterySubaDawasak'),
+  superFifty('Vasana Super Fifty', 'lotterySuperFifty'),
+  supiriVasana('Supiri Vasana', 'lotterySupiriVasana'),
+  vasana('Vasana Sampatha', 'lotteryVasana'),
+  unknown('Unknown', 'lotteryUnknown');
 
   final String displayName;
-  const LotteryType(this.displayName);
+  final String l10nKey;
+  const LotteryType(this.displayName, this.l10nKey);
+
+  static String _normalize(String s) =>
+      s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');
 
   static LotteryType fromString(String name) {
+    final n = _normalize(name);
     return LotteryType.values.firstWhere(
-      (type) => type.displayName.toLowerCase().contains(name.toLowerCase()) ||
-          name.toLowerCase().contains(type.displayName.toLowerCase()),
+      (type) =>
+          _normalize(type.displayName).contains(n) ||
+          n.contains(_normalize(type.displayName)),
       orElse: () => LotteryType.unknown,
     );
+  }
+}
+
+String getLotteryDisplayName(LotteryType type, AppLocalizations l10n) {
+  switch (type) {
+    case LotteryType.adaSampatha:
+      return l10n.lotteryAdaSampatha;
+    case LotteryType.daruDiriSampatha:
+      return l10n.lotteryDaruDiriSampatha;
+    case LotteryType.delakshapathi:
+      return l10n.lotteryDelakshapathi;
+    case LotteryType.dhanaNidhanaya:
+      return l10n.lotteryDhanaNidhanaya;
+    case LotteryType.dollarFortune:
+      return l10n.lotteryDollarFortune;
+    case LotteryType.govisetha:
+      return l10n.lotteryGovisetha;
+    case LotteryType.handahana:
+      return l10n.lotteryHandahana;
+    case LotteryType.jathika:
+      return l10n.lotteryJathika;
+    case LotteryType.mahajana:
+      return l10n.lotteryMahajana;
+    case LotteryType.mega60:
+      return l10n.lotteryMega60;
+    case LotteryType.megaMillions:
+      return l10n.lotteryMegaMillions;
+    case LotteryType.megaPower:
+      return l10n.lotteryMegaPower;
+    case LotteryType.neeroga:
+      return l10n.lotteryNeeroga;
+    case LotteryType.nlbJaya:
+      return l10n.lotteryNlbJaya;
+    case LotteryType.sampathRekha:
+      return l10n.lotterySampathRekha;
+    case LotteryType.sampathaLagnaVarama:
+      return l10n.lotterySampathaLagnaVarama;
+    case LotteryType.sevana:
+      return l10n.lotterySevana;
+    case LotteryType.shanida:
+      return l10n.lotteryShanida;
+    case LotteryType.subaDawasak:
+      return l10n.lotterySubaDawasak;
+    case LotteryType.superFifty:
+      return l10n.lotterySuperFifty;
+    case LotteryType.supiriVasana:
+      return l10n.lotterySupiriVasana;
+    case LotteryType.vasana:
+      return l10n.lotteryVasana;
+    case LotteryType.unknown:
+      return l10n.lotteryUnknown;
   }
 }
 

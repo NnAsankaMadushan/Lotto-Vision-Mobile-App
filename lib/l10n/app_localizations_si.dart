@@ -167,4 +167,73 @@ class AppLocalizationsSi extends AppLocalizations {
 
   @override
   String get noInternetConnection => 'අන්තර්ජාල සම්බන්ධතාවයක් නැත';
+
+  @override
+  String get lotteryAdaSampatha => 'අද සම්පත';
+
+  @override
+  String get lotteryDaruDiriSampatha => 'දරු දිරි සම්පත';
+
+  @override
+  String get lotteryDelakshapathi => 'දෙලක්ෂපති ද්විත්ව ස්වප්න';
+
+  @override
+  String get lotteryDhanaNidhanaya => 'ධන නිධානය';
+
+  @override
+  String get lotteryDollarFortune => 'ඩොලර් සම්පත';
+
+  @override
+  String get lotteryGovisetha => 'ගෝවිසේත';
+
+  @override
+  String get lotteryHandahana => 'හන්දහන';
+
+  @override
+  String get lotteryJathika => 'ජාතික සම්පත';
+
+  @override
+  String get lotteryMahajana => 'මහජන සම්පත';
+
+  @override
+  String get lotteryMega60 => 'මෙගා 60';
+
+  @override
+  String get lotteryMegaMillions => 'මෙගා මිලියන';
+
+  @override
+  String get lotteryMegaPower => 'මෙගා පවර්';
+
+  @override
+  String get lotteryNeeroga => 'නීරෝග ලග්න ජය';
+
+  @override
+  String get lotteryNlbJaya => 'එන්.එල්.බී ජය';
+
+  @override
+  String get lotterySampathRekha => 'සම්පත් රේඛා';
+
+  @override
+  String get lotterySampathaLagnaVarama => 'සම්පත ලග්න වරම';
+
+  @override
+  String get lotterySevana => 'සේවන';
+
+  @override
+  String get lotteryShanida => 'ශනිද';
+
+  @override
+  String get lotterySubaDawasak => 'සුබ දවසක්';
+
+  @override
+  String get lotterySuperFifty => 'වසන සුපර් පණ්ඩෑස්';
+
+  @override
+  String get lotterySupiriVasana => 'සුපිරි වසන';
+
+  @override
+  String get lotteryVasana => 'වසන සම්පත';
+
+  @override
+  String get lotteryUnknown => 'නොදනී';
 }

@@ -167,4 +167,73 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noInternetConnection => 'No internet connection';
+
+  @override
+  String get lotteryAdaSampatha => 'Ada Sampatha';
+
+  @override
+  String get lotteryDaruDiriSampatha => 'Daru Diri Sampatha';
+
+  @override
+  String get lotteryDelakshapathi => 'Delakshapathi Double Dreams';
+
+  @override
+  String get lotteryDhanaNidhanaya => 'Dhana Nidhanaya';
+
+  @override
+  String get lotteryDollarFortune => 'Dollar Fortune';
+
+  @override
+  String get lotteryGovisetha => 'Govisetha';
+
+  @override
+  String get lotteryHandahana => 'Handahana';
+
+  @override
+  String get lotteryJathika => 'Jathika Sampatha';
+
+  @override
+  String get lotteryMahajana => 'Mahajana Sampatha';
+
+  @override
+  String get lotteryMega60 => 'Mega 60';
+
+  @override
+  String get lotteryMegaMillions => 'Mega Millions';
+
+  @override
+  String get lotteryMegaPower => 'Mega Power';
+
+  @override
+  String get lotteryNeeroga => 'Neeroga Lagna Jaya';
+
+  @override
+  String get lotteryNlbJaya => 'NLB Jaya';
+
+  @override
+  String get lotterySampathRekha => 'Sampath Rekha';
+
+  @override
+  String get lotterySampathaLagnaVarama => 'Sampatha Lagna Varama';
+
+  @override
+  String get lotterySevana => 'Sevana';
+
+  @override
+  String get lotteryShanida => 'Shanida';
+
+  @override
+  String get lotterySubaDawasak => 'Suba Dawasak';
+
+  @override
+  String get lotterySuperFifty => 'Vasana Super Fifty';
+
+  @override
+  String get lotterySupiriVasana => 'Supiri Vasana';
+
+  @override
+  String get lotteryVasana => 'Vasana Sampatha';
+
+  @override
+  String get lotteryUnknown => 'Unknown';
 }

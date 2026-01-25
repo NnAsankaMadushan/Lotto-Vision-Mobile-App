@@ -90,7 +90,11 @@ class LotteryRepositoryImpl implements LotteryRepository {
   ResultFuture<LotteryResult> fetchLatestResult(LotteryType type) async {
     try {
       final result = await remoteDataSource.fetchLatestResult(type);
-      await localDataSource.cacheResult(result);
+      try {
+        await localDataSource.cacheResult(result);
+      } catch (_) {
+        // Best-effort cache; don't fail the fetch if local storage fails.
+      }
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -112,7 +116,11 @@ class LotteryRepositoryImpl implements LotteryRepository {
 
       // Fetch from remote
       final result = await remoteDataSource.fetchResultByDraw(type, drawNumber);
-      await localDataSource.cacheResult(result);
+      try {
+        await localDataSource.cacheResult(result);
+      } catch (_) {
+        // Best-effort cache; don't fail the fetch if local storage fails.
+      }
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
