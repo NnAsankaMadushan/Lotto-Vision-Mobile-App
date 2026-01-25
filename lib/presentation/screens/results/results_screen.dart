@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:lotto_vision/core/di/injection_container.dart';
+import 'package:lotto_vision/services/lottery/dlb_results_service.dart';
 import 'package:lotto_vision/services/lottery/lottery_results_service.dart';
 
 class ResultsScreen extends ConsumerWidget {
@@ -55,26 +56,52 @@ class ResultsScreen extends ConsumerWidget {
   }
 }
 
-final _latestResultsProvider = FutureProvider<List<LotteryResultWithMeta>>((ref) async {
-  final service = sl<LotteryResultsService>();
+final _latestResultsProvider = FutureProvider<List<_ResultListItem>>((ref) async {
+  final nlb = sl<LotteryResultsService>();
+  final dlb = sl<DlbResultsService>();
   if (kDebugMode) {
-    debugPrint('[Results] fetching all latest results');
+    debugPrint('[Results] fetching all latest results (NLB + DLB)');
   }
-  final results = await service.fetchAllLatestResultsWithMeta();
+  final nlbResults = await nlb.fetchAllLatestResultsWithMeta();
+  final dlbResults = await dlb.fetchAllLatestResultsWithMeta();
+
+  final items = <_ResultListItem>[
+    for (final r in nlbResults)
+      _ResultListItem(
+        provider: _ResultProvider.nlb,
+        title: r.result.lotteryType.displayName,
+        drawNumber: r.result.drawNumber,
+        drawDate: r.result.drawDate,
+        numbers: r.result.winningNumbers.map((n) => n.toString()).toList(),
+        sign: r.sign,
+        logoUrl: r.logoUrl,
+      ),
+    for (final r in dlbResults)
+      _ResultListItem(
+        provider: _ResultProvider.dlb,
+        title: r.name,
+        drawNumber: r.drawNumber,
+        drawDate: r.drawDate,
+        numbers: r.values.where((v) => int.tryParse(v) != null).toList(),
+        sign: r.sign,
+        logoUrl: r.logoUrl,
+      ),
+  ];
+
+  items.sort((a, b) => b.drawDate.compareTo(a.drawDate));
   if (kDebugMode) {
-    debugPrint('[Results] done, count=${results.length}');
+    debugPrint('[Results] done, count=${items.length}');
   }
-  return results;
+  return items;
 });
 
 class _ResultCard extends StatelessWidget {
-  final LotteryResultWithMeta item;
+  final _ResultListItem item;
   const _ResultCard({required this.item});
 
   @override
   Widget build(BuildContext context) {
-    final result = item.result;
-    final date = DateFormat.yMMMMd().format(result.drawDate);
+    final date = DateFormat.yMMMMd().format(item.drawDate);
     final sign = (item.sign ?? '').trim();
     final hasSign = sign.isNotEmpty;
     return Card(
@@ -89,12 +116,12 @@ class _ResultCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    result.lotteryType.displayName,
+                    item.title,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
                 Text(
-                  '#${result.drawNumber}',
+                  '#${item.drawNumber}',
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
               ],
@@ -115,13 +142,13 @@ class _ResultCard extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      for (var i = 0; i < result.winningNumbers.length; i++)
+                      for (var i = 0; i < item.numbers.length; i++)
                         _NumberChip(
-                          number: result.winningNumbers[i],
-                          isHighlighted: result.lotteryType.name == 'megaPower' && i == 0,
+                          number: int.tryParse(item.numbers[i]) ?? 0,
+                          isHighlighted: item.provider == _ResultProvider.nlb &&
+                              item.title.toLowerCase().contains('mega power') &&
+                              i == 0,
                         ),
-                      if (result.bonusNumber != null)
-                        _NumberChip(number: result.bonusNumber!, isBonus: true),
                     ],
                   ),
                 ),
@@ -132,6 +159,28 @@ class _ResultCard extends StatelessWidget {
       ),
     );
   }
+}
+
+enum _ResultProvider { nlb, dlb }
+
+class _ResultListItem {
+  final _ResultProvider provider;
+  final String title;
+  final int drawNumber;
+  final DateTime drawDate;
+  final List<String> numbers;
+  final String? sign;
+  final String? logoUrl;
+
+  const _ResultListItem({
+    required this.provider,
+    required this.title,
+    required this.drawNumber,
+    required this.drawDate,
+    required this.numbers,
+    required this.sign,
+    required this.logoUrl,
+  });
 }
 
 String? _zodiacIconUrl(String sign) {
@@ -176,12 +225,10 @@ String _signFallbackLetter(String sign) {
 
 class _NumberChip extends StatelessWidget {
   final int number;
-  final bool isBonus;
   final bool isHighlighted;
 
   const _NumberChip({
     required this.number,
-    this.isBonus = false,
     this.isHighlighted = false,
   });
 
@@ -189,8 +236,8 @@ class _NumberChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final bg = isHighlighted
         ? Colors.red.shade600
-        : (isBonus ? Colors.blue.shade700 : const Color(0xFFF5B400));
-    final fg = isHighlighted || isBonus ? Colors.white : Colors.black;
+        : const Color(0xFFF5B400);
+    final fg = isHighlighted ? Colors.white : Colors.black;
 
     return Container(
       width: 40,

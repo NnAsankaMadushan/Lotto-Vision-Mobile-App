@@ -7,6 +7,7 @@ import 'package:lotto_vision/domain/usecases/check_ticket.dart';
 import 'package:lotto_vision/domain/usecases/get_all_tickets.dart';
 import 'package:lotto_vision/domain/usecases/scan_ticket.dart';
 import 'package:lotto_vision/services/lottery/lottery_results_service.dart';
+import 'package:lotto_vision/services/lottery/dlb_results_service.dart';
 import 'package:lotto_vision/services/lottery/ticket_checker.dart';
 import 'package:lotto_vision/services/ocr/lottery_parser.dart';
 import 'package:lotto_vision/services/ocr/ocr_service.dart';
@@ -18,6 +19,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => OCRService());
   sl.registerLazySingleton(() => LotteryParser());
   sl.registerLazySingleton(() => LotteryResultsService());
+  sl.registerLazySingleton(() => DlbResultsService());
   sl.registerLazySingleton(() => TicketChecker());
 
   // Data sources
