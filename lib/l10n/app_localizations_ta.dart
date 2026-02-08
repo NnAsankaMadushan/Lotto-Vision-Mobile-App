@@ -27,6 +27,9 @@ class AppLocalizationsTa extends AppLocalizations {
   String get settings => 'அமைப்புகள்';
 
   @override
+  String get notifications => 'அறிவிப்புகள்';
+
+  @override
   String get scanTicket => 'லாட்டரி டிக்கெட்டை ஸ்கேன் செய்';
 
   @override

@@ -7,7 +7,7 @@ class ScanTicket {
 
   const ScanTicket(this.repository);
 
-  ResultFuture<LotteryTicket> call(String imagePath) async {
+  ResultFuture<(LotteryTicket, CheckResult?)> call(String imagePath) async {
     return await repository.scanTicket(imagePath);
   }
 }

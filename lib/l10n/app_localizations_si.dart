@@ -27,6 +27,9 @@ class AppLocalizationsSi extends AppLocalizations {
   String get settings => 'සැකසුම්';
 
   @override
+  String get notifications => 'නිවේදන';
+
+  @override
   String get scanTicket => 'ලොතරැයි ටිකට් පත ස්කෑන් කරන්න';
 
   @override

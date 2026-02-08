@@ -18,14 +18,28 @@ class LotteryParser {
     'ශනිදා': LotteryType.shanida,
     'vasana': LotteryType.vasana,
     'වසන': LotteryType.vasana,
+    'super ball': LotteryType.superBall,
+    'superball': LotteryType.superBall,
   };
+
+  String _normalize(String s) =>
+      s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');
 
   LotteryType detectLotteryType(String text) {
     final lowerText = text.toLowerCase();
+    final normalizedText = _normalize(text);
 
     for (var entry in _lotteryKeywords.entries) {
       if (lowerText.contains(entry.key.toLowerCase())) {
         return entry.value;
+      }
+    }
+
+    for (final type in LotteryType.values) {
+      if (type == LotteryType.unknown) continue;
+      final normalizedName = _normalize(type.displayName);
+      if (normalizedName.isNotEmpty && normalizedText.contains(normalizedName)) {
+        return type;
       }
     }
 

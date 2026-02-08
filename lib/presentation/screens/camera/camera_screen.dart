@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:lotto_vision/presentation/screens/scanner/scanner_screen.dart';
+import 'dart:io' show Platform;
 
 class CameraScreen extends ConsumerStatefulWidget {
   const CameraScreen({super.key});
@@ -76,12 +77,23 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    // Request permission
-    final permission = source == ImageSource.camera
-        ? Permission.camera
-        : Permission.photos;
+    // Request permission (Android: handle API 33+ vs older devices)
+    final Permission permission;
+    if (source == ImageSource.camera) {
+      permission = Permission.camera;
+    } else {
+      permission = Platform.isAndroid ? Permission.photos : Permission.photos;
+    }
 
-    final status = await permission.request();
+    var status = await permission.request();
+
+    // On Android 12 and below, gallery access is guarded by READ_EXTERNAL_STORAGE.
+    if (source == ImageSource.gallery &&
+        Platform.isAndroid &&
+        !status.isGranted &&
+        !status.isPermanentlyDenied) {
+      status = await Permission.storage.request();
+    }
 
     if (!status.isGranted) {
       if (mounted) {
@@ -90,7 +102,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
             content: Text(
               source == ImageSource.camera
                   ? 'Camera permission is required'
-                  : 'Storage permission is required',
+                  : 'Gallery permission is required',
             ),
             action: SnackBarAction(
               label: 'Settings',

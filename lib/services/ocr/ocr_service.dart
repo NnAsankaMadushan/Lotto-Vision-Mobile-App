@@ -95,13 +95,31 @@ class OCRService {
       image = img.gaussianBlur(image, radius: 1);
 
       // Save enhanced image
-      final enhancedPath = imagePath.replaceAll('.', '_enhanced.');
+      final enhancedPath = _withEnhancedSuffix(imagePath);
       await File(enhancedPath).writeAsBytes(img.encodeJpg(image, quality: 95));
 
       return enhancedPath;
     } catch (e) {
       throw ImageProcessingException('Failed to preprocess image: ${e.toString()}');
     }
+  }
+
+  String _withEnhancedSuffix(String imagePath) {
+    final lastSlash = imagePath.lastIndexOf('/');
+    final lastBackslash = imagePath.lastIndexOf('\\');
+    final lastSeparator = lastSlash > lastBackslash ? lastSlash : lastBackslash;
+
+    final dir = lastSeparator >= 0 ? imagePath.substring(0, lastSeparator + 1) : '';
+    final fileName = lastSeparator >= 0 ? imagePath.substring(lastSeparator + 1) : imagePath;
+
+    final lastDot = fileName.lastIndexOf('.');
+    if (lastDot <= 0) {
+      return '$dir${fileName}_enhanced';
+    }
+
+    final base = fileName.substring(0, lastDot);
+    final ext = fileName.substring(lastDot); // includes "."
+    return '$dir${base}_enhanced$ext';
   }
 
   void dispose() {

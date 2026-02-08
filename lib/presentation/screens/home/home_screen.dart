@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lotto_vision/core/constants/lottery_types.dart';
 import 'package:lotto_vision/presentation/screens/camera/camera_screen.dart';
 import 'package:lotto_vision/presentation/screens/history/history_screen.dart';
+import 'package:lotto_vision/presentation/screens/notifications/notification_screen.dart';
 import 'package:lotto_vision/presentation/screens/results/results_screen.dart';
 import 'package:lotto_vision/presentation/screens/settings/settings_screen.dart';
 import 'package:lotto_vision/l10n/app_localizations.dart';
@@ -21,6 +22,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     HomeTab(),
     ResultsScreen(),
     HistoryScreen(),
+    NotificationScreen(),
     SettingsScreen(),
   ];
 
@@ -52,6 +54,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             icon: const Icon(Icons.history),
             selectedIcon: const Icon(Icons.history),
             label: l10n.history,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.notifications_outlined),
+            selectedIcon: const Icon(Icons.notifications),
+            label: l10n.notifications,
           ),
           NavigationDestination(
             icon: const Icon(Icons.settings_outlined),

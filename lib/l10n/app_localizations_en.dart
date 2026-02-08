@@ -27,6 +27,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
+  String get notifications => 'Notifications';
+
+  @override
   String get scanTicket => 'Scan Lottery Ticket';
 
   @override

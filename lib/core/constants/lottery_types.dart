@@ -21,6 +21,7 @@ enum LotteryType {
   sevana('Sevana', 'lotterySevana'),
   shanida('Shanida', 'lotteryShanida'),
   subaDawasak('Suba Dawasak', 'lotterySubaDawasak'),
+  superBall('Super Ball', 'lotterySuperBall'),
   superFifty('Vasana Super Fifty', 'lotterySuperFifty'),
   supiriVasana('Supiri Vasana', 'lotterySupiriVasana'),
   vasana('Vasana Sampatha', 'lotteryVasana'),
@@ -84,6 +85,8 @@ String getLotteryDisplayName(LotteryType type, AppLocalizations l10n) {
       return l10n.lotteryShanida;
     case LotteryType.subaDawasak:
       return l10n.lotterySubaDawasak;
+    case LotteryType.superBall:
+      return type.displayName;
     case LotteryType.superFifty:
       return l10n.lotterySuperFifty;
     case LotteryType.supiriVasana:
@@ -144,6 +147,59 @@ class LotteryConfig {
         Prize(match: 5, name: '2nd Prize', estimatedAmount: 1000000),
         Prize(match: 4, name: '3rd Prize', estimatedAmount: 20000),
         Prize(match: 3, name: '4th Prize', estimatedAmount: 2000),
+      ],
+    ),
+    // DLB (assumption based on common ticket format): 4 numbers, usually up to ~99.
+    LotteryType.superBall: const LotteryConfig(
+      type: LotteryType.superBall,
+      numbersCount: 4,
+      minNumber: 1,
+      maxNumber: 99,
+      prizes: [],
+    ),
+    LotteryType.dhanaNidhanaya: const LotteryConfig(
+      type: LotteryType.dhanaNidhanaya,
+      numbersCount: 4,
+      minNumber: 1,
+      maxNumber: 99,
+      prizes: [
+        Prize(match: 4, name: '4 Numbers', estimatedAmount: 1000000),
+        Prize(match: 3, name: '3 Numbers', estimatedAmount: 1000),
+        Prize(match: 2, name: '2 Numbers', estimatedAmount: 100),
+      ],
+    ),
+    LotteryType.jathika: const LotteryConfig(
+      type: LotteryType.jathika,
+      numbersCount: 6,
+      minNumber: 1,
+      maxNumber: 99,
+      prizes: [
+        Prize(match: 6, name: '6 Numbers', estimatedAmount: 10000000),
+        Prize(match: 5, name: '5 Numbers', estimatedAmount: 500000),
+        Prize(match: 4, name: '4 Numbers', estimatedAmount: 5000),
+        Prize(match: 3, name: '3 Numbers', estimatedAmount: 500),
+      ],
+    ),
+    LotteryType.shanida: const LotteryConfig(
+      type: LotteryType.shanida,
+      numbersCount: 4,
+      minNumber: 1,
+      maxNumber: 99,
+      prizes: [
+        Prize(match: 4, name: '4 Numbers', estimatedAmount: 1000000),
+        Prize(match: 3, name: '3 Numbers', estimatedAmount: 1000),
+        Prize(match: 2, name: '2 Numbers', estimatedAmount: 100),
+      ],
+    ),
+    LotteryType.vasana: const LotteryConfig(
+      type: LotteryType.vasana,
+      numbersCount: 4,
+      minNumber: 1,
+      maxNumber: 99,
+      prizes: [
+        Prize(match: 4, name: '4 Numbers', estimatedAmount: 1000000),
+        Prize(match: 3, name: '3 Numbers', estimatedAmount: 1000),
+        Prize(match: 2, name: '2 Numbers', estimatedAmount: 100),
       ],
     ),
   };

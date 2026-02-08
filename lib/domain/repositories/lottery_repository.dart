@@ -5,7 +5,7 @@ import 'package:lotto_vision/domain/entities/lottery_ticket.dart';
 
 abstract class LotteryRepository {
   // Ticket operations
-  ResultFuture<LotteryTicket> scanTicket(String imagePath);
+  ResultFuture<(LotteryTicket, CheckResult?)> scanTicket(String imagePath);
   ResultFuture<List<LotteryTicket>> getAllTickets();
   ResultFuture<LotteryTicket> getTicketById(String id);
   ResultVoid saveTicket(LotteryTicket ticket);

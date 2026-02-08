@@ -216,6 +216,9 @@ class LotteryResultsService {
         return 'shanida';
       case LotteryType.subaDawasak:
         return 'suba-dawasak';
+      case LotteryType.superBall:
+        // DLB-only lottery; not available on NLB results page.
+        return '';
       case LotteryType.superFifty:
         return 'super-fifty';
       case LotteryType.supiriVasana:
