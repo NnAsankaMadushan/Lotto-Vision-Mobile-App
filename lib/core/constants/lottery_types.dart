@@ -25,6 +25,7 @@ enum LotteryType {
   superFifty('Vasana Super Fifty', 'lotterySuperFifty'),
   supiriVasana('Supiri Vasana', 'lotterySupiriVasana'),
   vasana('Vasana Sampatha', 'lotteryVasana'),
+  lagnaWasana('Lagna Wasana', 'lotteryLagnaWasana'),
   unknown('Unknown', 'lotteryUnknown');
 
   final String displayName;
@@ -32,7 +33,7 @@ enum LotteryType {
   const LotteryType(this.displayName, this.l10nKey);
 
   static String _normalize(String s) =>
-      s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');
+      s.toLowerCase().replaceAll(RegExp(r'\s+'), '');
 
   static LotteryType fromString(String name) {
     final n = _normalize(name);
@@ -93,6 +94,8 @@ String getLotteryDisplayName(LotteryType type, AppLocalizations l10n) {
       return l10n.lotterySupiriVasana;
     case LotteryType.vasana:
       return l10n.lotteryVasana;
+    case LotteryType.lagnaWasana:
+      return 'Lagna Wasana';
     case LotteryType.unknown:
       return l10n.lotteryUnknown;
   }
@@ -199,6 +202,26 @@ class LotteryConfig {
       prizes: [
         Prize(match: 4, name: '4 Numbers', estimatedAmount: 1000000),
         Prize(match: 3, name: '3 Numbers', estimatedAmount: 1000),
+        Prize(match: 2, name: '2 Numbers', estimatedAmount: 100),
+      ],
+    ),
+    LotteryType.lagnaWasana: const LotteryConfig(
+      type: LotteryType.lagnaWasana,
+      numbersCount: 4,
+      minNumber: 1,
+      maxNumber: 99,
+      prizes: [
+        Prize(match: 4, name: '4 Numbers', estimatedAmount: 1000000),
+        Prize(match: 3, name: '3 Numbers', estimatedAmount: 1000),
+        Prize(match: 2, name: '2 Numbers', estimatedAmount: 100),
+      ],
+    ),
+    LotteryType.subaDawasak: const LotteryConfig(
+      type: LotteryType.subaDawasak,
+      numbersCount: 2,
+      minNumber: 1,
+      maxNumber: 99,
+      prizes: [
         Prize(match: 2, name: '2 Numbers', estimatedAmount: 100),
       ],
     ),

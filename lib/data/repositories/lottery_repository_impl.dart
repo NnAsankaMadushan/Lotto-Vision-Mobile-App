@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dartz/dartz.dart';
 import 'package:lotto_vision/core/constants/lottery_types.dart';
 import 'package:lotto_vision/core/errors/exceptions.dart';
@@ -22,17 +23,48 @@ class LotteryRepositoryImpl implements LotteryRepository {
   });
 
   @override
-  ResultFuture<LotteryTicket> scanTicket(String imagePath) async {
+  ResultFuture<(LotteryTicket, CheckResult?)> scanTicket(String imagePath) async {
     try {
       final ticket = await remoteDataSource.scanTicket(imagePath);
-      await localDataSource.cacheTicket(ticket);
-      return Right(ticket);
+      
+      try {
+        await localDataSource.cacheTicket(ticket);
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('[Repository] Failed to cache initial scan: $e');
+        }
+      }
+
+      CheckResult? checkResult;
+      try {
+        final resultEither = await fetchResultByDraw(ticket.lotteryType, ticket.drawNumber);
+        checkResult = resultEither.fold(
+          (failure) => null,
+          (result) => ticketChecker.checkTicket(ticket, result),
+        );
+
+        if (checkResult != null) {
+          final updatedTicket = ticket.copyWith(
+            isChecked: true,
+            checkResult: checkResult,
+          );
+          try {
+            await localDataSource.cacheTicket(updatedTicket);
+          } catch (_) {}
+          return Right((updatedTicket, checkResult));
+        }
+      } catch (_) {
+      }
+
+      return Right((ticket, checkResult));
     } on OCRException catch (e) {
-      return Left(OCRFailure(e.message));
+      return Left(OCRFailure(e.toString()));
     } on ImageProcessingException catch (e) {
-      return Left(ImageProcessingFailure(e.message));
+      return Left(ImageProcessingFailure(e.toString()));
     } on LotteryParseException catch (e) {
-      return Left(LotteryParseFailure(e.message));
+      return Left(LotteryParseFailure(e.toString()));
+    } on CacheException catch (e) {
+      return Left(CacheFailure(e.toString()));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -110,7 +142,8 @@ class LotteryRepositoryImpl implements LotteryRepository {
     try {
       // Try cache first
       final cachedResult = await localDataSource.getResultByDraw(type, drawNumber);
-      if (cachedResult != null) {
+      
+      if (cachedResult != null && cachedResult.luckyLetter != null) {
         return Right(cachedResult);
       }
 

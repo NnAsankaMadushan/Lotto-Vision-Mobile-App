@@ -10,12 +10,18 @@ import 'package:lotto_vision/l10n/app_localizations.dart';
 import 'package:lotto_vision/core/di/injection_container.dart' as di;
 import 'package:lotto_vision/presentation/providers/theme_provider.dart';
 import 'package:lotto_vision/presentation/providers/locale_provider.dart';
+import 'package:lotto_vision/data/models/lottery_ticket_model.dart';
+import 'package:lotto_vision/data/models/lottery_result_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Hive
   await Hive.initFlutter();
+  
+  // Register Hive adapters
+  Hive.registerAdapter(LotteryTicketModelAdapter());
+  Hive.registerAdapter(LotteryResultModelAdapter());
 
   // Initialize dependency injection
   await di.init();

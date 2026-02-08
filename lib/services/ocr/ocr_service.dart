@@ -65,7 +65,7 @@ class OCRService {
           }
 
           // Extract draw numbers
-          final drawMatches = RegExp(r'(?:Draw|දිනුම්|லாட்டரி)\s*(?:No|අංකය|எண்)?[:\s]*(\d+)', caseSensitive: false).allMatches(lineText);
+          final drawMatches = RegExp(r'(?:Draw|දිනුම්|ලාட்டරි)\s*(?:No|අංකය|எண்)?[:\s]*(\d+)', caseSensitive: false).allMatches(lineText);
           for (var match in drawMatches) {
             if (match.group(1) != null) {
               structuredData['drawNumber'] = match.group(1);
@@ -81,27 +81,10 @@ class OCRService {
   }
 
   Future<String> preprocessImage(String imagePath) async {
-    try {
-      final bytes = await File(imagePath).readAsBytes();
-      img.Image? image = img.decodeImage(bytes);
-
-      if (image == null) {
-        throw const ImageProcessingException('Failed to decode image');
-      }
-
-      // Enhance image for better OCR
-      image = img.grayscale(image);
-      image = img.adjustColor(image, contrast: 1.2, brightness: 1.1);
-      image = img.gaussianBlur(image, radius: 1);
-
-      // Save enhanced image
-      final enhancedPath = _withEnhancedSuffix(imagePath);
-      await File(enhancedPath).writeAsBytes(img.encodeJpg(image, quality: 95));
-
-      return enhancedPath;
-    } catch (e) {
-      throw ImageProcessingException('Failed to preprocess image: ${e.toString()}');
-    }
+    // Return original path to avoid memory-intensive processing in Dart.
+    // ML Kit's native implementation is much more memory-efficient and 
+    // handles varying image qualities well without needing manual contrast adjustments.
+    return imagePath;
   }
 
   String _withEnhancedSuffix(String imagePath) {

@@ -40,8 +40,10 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
           _errorMessage = failure.message;
         });
       },
-      (ticket) {
+      (result) {
         if (!mounted) return;
+
+        final (ticket, _) = result;
 
         setState(() {
           _isScanning = false;

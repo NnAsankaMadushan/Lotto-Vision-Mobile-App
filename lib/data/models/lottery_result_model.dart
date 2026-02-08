@@ -23,12 +23,15 @@ class LotteryResultModel extends LotteryResult {
   final List<int> modelWinningNumbers;
 
   @HiveField(5)
-  final int? modelBonusNumber;
+  final String? modelLuckyLetter;
 
   @HiveField(6)
-  final Map<String, double> modelPrizes;
+  final int? modelBonusNumber;
 
   @HiveField(7)
+  final Map<String, double> modelPrizes;
+
+  @HiveField(8)
   final DateTime modelFetchedAt;
 
   const LotteryResultModel({
@@ -37,6 +40,7 @@ class LotteryResultModel extends LotteryResult {
     required this.modelDrawNumber,
     required this.modelDrawDate,
     required this.modelWinningNumbers,
+    this.modelLuckyLetter,
     this.modelBonusNumber,
     required this.modelPrizes,
     required this.modelFetchedAt,
@@ -46,6 +50,7 @@ class LotteryResultModel extends LotteryResult {
           drawNumber: modelDrawNumber,
           drawDate: modelDrawDate,
           winningNumbers: modelWinningNumbers,
+          luckyLetter: modelLuckyLetter,
           bonusNumber: modelBonusNumber,
           prizes: modelPrizes,
           fetchedAt: modelFetchedAt,
@@ -58,6 +63,7 @@ class LotteryResultModel extends LotteryResult {
       modelDrawNumber: result.drawNumber,
       modelDrawDate: result.drawDate,
       modelWinningNumbers: result.winningNumbers,
+      modelLuckyLetter: result.luckyLetter,
       modelBonusNumber: result.bonusNumber,
       modelPrizes: result.prizes,
       modelFetchedAt: result.fetchedAt,
@@ -74,6 +80,7 @@ class LotteryResultModel extends LotteryResult {
       drawNumber: modelDrawNumber,
       drawDate: modelDrawDate,
       winningNumbers: modelWinningNumbers,
+      luckyLetter: modelLuckyLetter,
       bonusNumber: modelBonusNumber,
       prizes: modelPrizes,
       fetchedAt: modelFetchedAt,
@@ -87,6 +94,7 @@ class LotteryResultModel extends LotteryResult {
       modelDrawNumber: map['drawNumber'] as int,
       modelDrawDate: DateTime.parse(map['drawDate'] as String),
       modelWinningNumbers: (map['winningNumbers'] as List).map((n) => n as int).toList(),
+      modelLuckyLetter: map['luckyLetter'] as String?,
       modelBonusNumber: map['bonusNumber'] as int?,
       modelPrizes: Map<String, double>.from(map['prizes'] as Map),
       modelFetchedAt: DateTime.parse(map['fetchedAt'] as String),
@@ -100,6 +108,7 @@ class LotteryResultModel extends LotteryResult {
       'drawNumber': modelDrawNumber,
       'drawDate': modelDrawDate.toIso8601String(),
       'winningNumbers': modelWinningNumbers,
+      'luckyLetter': modelLuckyLetter,
       'bonusNumber': modelBonusNumber,
       'prizes': modelPrizes,
       'fetchedAt': modelFetchedAt.toIso8601String(),

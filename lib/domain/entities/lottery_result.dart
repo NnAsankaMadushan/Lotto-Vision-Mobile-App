@@ -7,6 +7,7 @@ class LotteryResult extends Equatable {
   final int drawNumber;
   final DateTime drawDate;
   final List<int> winningNumbers;
+  final String? luckyLetter;
   final int? bonusNumber;
   final Map<String, double> prizes;
   final DateTime fetchedAt;
@@ -17,6 +18,7 @@ class LotteryResult extends Equatable {
     required this.drawNumber,
     required this.drawDate,
     required this.winningNumbers,
+    this.luckyLetter,
     this.bonusNumber,
     required this.prizes,
     required this.fetchedAt,
@@ -29,6 +31,7 @@ class LotteryResult extends Equatable {
         drawNumber,
         drawDate,
         winningNumbers,
+        luckyLetter,
         bonusNumber,
         prizes,
         fetchedAt,

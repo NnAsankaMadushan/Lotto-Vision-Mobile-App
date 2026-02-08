@@ -23,42 +23,54 @@ class LotteryTicketModel extends LotteryTicket {
   final List<List<int>> modelNumberSets;
 
   @HiveField(5)
-  final String? modelSerialNumber;
+  final String? modelLuckyLetter;
 
   @HiveField(6)
-  final String? modelBarcode;
+  final String? modelSerialNumber;
 
   @HiveField(7)
-  final String? modelImageUrl;
+  final String? modelBarcode;
 
   @HiveField(8)
-  final DateTime modelScannedAt;
+  final String? modelImageUrl;
 
   @HiveField(9)
+  final DateTime modelScannedAt;
+
+  @HiveField(10)
   final bool modelIsChecked;
 
-  const LotteryTicketModel({
+  @HiveField(11)
+  final Map? modelCheckResultMap;
+
+  LotteryTicketModel({
     required this.modelId,
     required this.lotteryTypeName,
     required this.modelDrawNumber,
     required this.modelDrawDate,
     required this.modelNumberSets,
+    this.modelLuckyLetter,
     this.modelSerialNumber,
     this.modelBarcode,
     this.modelImageUrl,
     required this.modelScannedAt,
     this.modelIsChecked = false,
+    this.modelCheckResultMap,
   }) : super(
           id: modelId,
           lotteryType: LotteryType.unknown,
           drawNumber: modelDrawNumber,
           drawDate: modelDrawDate,
           numberSets: modelNumberSets,
+          luckyLetter: modelLuckyLetter,
           serialNumber: modelSerialNumber,
           barcode: modelBarcode,
           imageUrl: modelImageUrl,
           scannedAt: modelScannedAt,
           isChecked: modelIsChecked,
+          checkResult: modelCheckResultMap != null
+              ? CheckResult.fromMap(Map<String, dynamic>.from(modelCheckResultMap!))
+              : null,
         );
 
   factory LotteryTicketModel.fromEntity(LotteryTicket ticket) {
@@ -68,11 +80,13 @@ class LotteryTicketModel extends LotteryTicket {
       modelDrawNumber: ticket.drawNumber,
       modelDrawDate: ticket.drawDate,
       modelNumberSets: ticket.numberSets,
+      modelLuckyLetter: ticket.luckyLetter,
       modelSerialNumber: ticket.serialNumber,
       modelBarcode: ticket.barcode,
       modelImageUrl: ticket.imageUrl,
       modelScannedAt: ticket.scannedAt,
       modelIsChecked: ticket.isChecked,
+      modelCheckResultMap: ticket.checkResult?.toMap(),
     );
   }
 
@@ -86,11 +100,15 @@ class LotteryTicketModel extends LotteryTicket {
       drawNumber: modelDrawNumber,
       drawDate: modelDrawDate,
       numberSets: modelNumberSets,
+      luckyLetter: modelLuckyLetter,
       serialNumber: modelSerialNumber,
       barcode: modelBarcode,
       imageUrl: modelImageUrl,
       scannedAt: modelScannedAt,
       isChecked: modelIsChecked,
+      checkResult: modelCheckResultMap != null
+          ? CheckResult.fromMap(Map<String, dynamic>.from(modelCheckResultMap!))
+          : null,
     );
   }
 
@@ -103,11 +121,13 @@ class LotteryTicketModel extends LotteryTicket {
       modelNumberSets: (map['numberSets'] as List)
           .map((set) => (set as List).map((n) => n as int).toList())
           .toList(),
+      modelLuckyLetter: map['luckyLetter'] as String?,
       modelSerialNumber: map['serialNumber'] as String?,
       modelBarcode: map['barcode'] as String?,
       modelImageUrl: map['imageUrl'] as String?,
       modelScannedAt: DateTime.parse(map['scannedAt'] as String),
       modelIsChecked: map['isChecked'] as bool? ?? false,
+      modelCheckResultMap: map['checkResult'] as Map?,
     );
   }
 
@@ -118,11 +138,13 @@ class LotteryTicketModel extends LotteryTicket {
       'drawNumber': modelDrawNumber,
       'drawDate': modelDrawDate.toIso8601String(),
       'numberSets': modelNumberSets,
+      'luckyLetter': modelLuckyLetter,
       'serialNumber': modelSerialNumber,
       'barcode': modelBarcode,
       'imageUrl': modelImageUrl,
       'scannedAt': modelScannedAt.toIso8601String(),
       'isChecked': modelIsChecked,
+      'checkResult': modelCheckResultMap,
     };
   }
 }

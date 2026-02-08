@@ -225,6 +225,8 @@ class LotteryResultsService {
         return 'supiri-vasana';
       case LotteryType.vasana:
         return 'vasana-sampatha';
+      case LotteryType.lagnaWasana:
+        return 'lagna-wasana';
       case LotteryType.unknown:
         return '';
     }
@@ -253,13 +255,19 @@ class LotteryResultsService {
 
       final numberLis = box.querySelectorAll('li');
       final numbers = <int>[];
+      String? luckyLetter;
       for (final li in numberLis) {
         final title = (li.attributes['title'] ?? '').toLowerCase().trim();
         final isNumber = title.startsWith('number') ||
             li.classes.any((c) => c.toLowerCase().startsWith('number'));
-        if (!isNumber) continue;
-        final n = int.tryParse(li.text.trim());
-        if (n != null) numbers.add(n);
+        
+        final text = li.text.trim();
+        final n = int.tryParse(text);
+        if (isNumber && n != null) {
+          numbers.add(n);
+        } else if (luckyLetter == null && text.isNotEmpty && n == null) {
+          luckyLetter = text;
+        }
       }
 
       final config = LotteryConfig.getConfig(requestedType);
@@ -275,7 +283,7 @@ class LotteryResultsService {
 
       if (kDebugMode) {
         debugPrint(
-          '[NLB] parsed ${requestedType.name} draw=$drawNumber date="$drawDateText" numbers=$winningNumbers',
+          '[NLB] parsed ${requestedType.name} draw=$drawNumber date="$drawDateText" numbers=$winningNumbers letter=$luckyLetter',
         );
       }
       return LotteryResult(
@@ -284,6 +292,7 @@ class LotteryResultsService {
         drawNumber: drawNumber,
         drawDate: drawDate,
         winningNumbers: winningNumbers,
+        luckyLetter: luckyLetter,
         prizes: {
           for (final p in (config?.prizes ?? const <Prize>[]))
             p.name: p.estimatedAmount,

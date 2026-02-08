@@ -14,6 +14,14 @@ class TicketChecker {
 
     final List<WinningMatch> matches = [];
     double totalWinnings = 0.0;
+    bool letterMatched = false;
+
+    // Check lucky letter/zodiac
+    if (ticket.luckyLetter != null && result.luckyLetter != null) {
+      if (ticket.luckyLetter!.trim().toUpperCase() == result.luckyLetter!.trim().toUpperCase()) {
+        letterMatched = true;
+      }
+    }
 
     // Check each number set
     for (int i = 0; i < ticket.numberSets.length; i++) {
@@ -22,13 +30,14 @@ class TicketChecker {
           .where((num) => result.winningNumbers.contains(num))
           .toList();
 
-      if (matchedNumbers.isNotEmpty) {
+      if (matchedNumbers.isNotEmpty || (i == 0 && letterMatched)) {
         final match = _calculatePrize(
           matchedNumbers.length,
           matchedNumbers,
           i,
           ticket.lotteryType,
           result,
+          letterMatched: i == 0 ? letterMatched : false,
         );
 
         if (match != null) {
@@ -39,10 +48,11 @@ class TicketChecker {
     }
 
     return CheckResult(
-      isWinner: matches.isNotEmpty,
+      isWinner: matches.isNotEmpty || letterMatched,
       totalWinnings: totalWinnings,
       matches: matches,
       checkedAt: DateTime.now(),
+      winningResult: result,
     );
   }
 
@@ -51,18 +61,27 @@ class TicketChecker {
     List<int> matchedNumbers,
     int setIndex,
     LotteryType lotteryType,
-    LotteryResult result,
-  ) {
+    LotteryResult result, {
+    bool letterMatched = false,
+  }) {
     final config = LotteryConfig.getConfig(lotteryType);
     if (config == null) return null;
 
+    // Special handling for letter-only prize if it exists in config
+    // For now, let's look for a prize named 'Letter' or something similar if matchCount is 0
+    
     // Find the prize tier for this match count
-    final prize = config.prizes.firstWhere(
-      (p) => p.match == matchCount,
-      orElse: () => const Prize(match: 0, name: 'No Prize', estimatedAmount: 0),
-    );
+    Prize? prize;
+    try {
+      prize = config.prizes.firstWhere((p) => p.match == matchCount);
+    } catch (_) {
+      // If no exact match prize, but letter matched, maybe there's a letter prize
+      if (letterMatched) {
+        prize = const Prize(match: 0, name: 'Lucky Letter', estimatedAmount: 20);
+      }
+    }
 
-    if (prize.match == 0) return null;
+    if (prize == null || (prize.match == 0 && !letterMatched)) return null;
 
     // Try to get actual prize amount from result, otherwise use estimated
     final prizeAmount = result.prizes[prize.name] ?? prize.estimatedAmount;

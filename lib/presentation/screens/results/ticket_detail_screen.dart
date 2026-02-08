@@ -21,6 +21,20 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
   String? _errorMessage;
 
   @override
+  void initState() {
+    super.initState();
+    // Initialize with existing result if available
+    _checkResult = widget.ticket.checkResult;
+    
+    // Automatically trigger a check if we don't have results yet
+    if (_checkResult == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkTicket();
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -29,7 +43,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
           IconButton(
             icon: const Icon(Icons.delete_outline),
             onPressed: () {
-              // Delete ticket
+              // TODO: Implement delete ticket
             },
           ),
         ],
@@ -74,6 +88,8 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
                         'Draw Date',
                         DateFormat('MMM dd, yyyy').format(widget.ticket.drawDate),
                       ),
+                      if (widget.ticket.luckyLetter != null)
+                        _buildInfoRow('Lucky Letter', widget.ticket.luckyLetter!),
                       if (widget.ticket.serialNumber != null)
                         _buildInfoRow('Serial', widget.ticket.serialNumber!),
                       const Divider(height: 24),
@@ -81,49 +97,94 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
                         'Your Numbers',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
-                      const SizedBox(height: 12),
-                      ...widget.ticket.numberSets.asMap().entries.map((entry) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Row(
+                  const SizedBox(height: 12),
+                  ...widget.ticket.numberSets.asMap().entries.map((entry) {
+                    final i = entry.key;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'SET ${i + 1}',
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
                             children: [
-                              Container(
-                                width: 28,
-                                height: 28,
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.primaryContainer,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '${entry.key + 1}',
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Wrap(
-                                  spacing: 8,
-                                  children: entry.value.map((num) {
-                                    return Chip(
-                                      label: Text(
-                                        num.toString().padLeft(2, '0'),
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
+                              if (widget.ticket.luckyLetter != null)
+                                Column(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: (_checkResult?.winningResult?.luckyLetter == widget.ticket.luckyLetter)
+                                            ? Colors.orange.shade800
+                                            : Theme.of(context).colorScheme.secondaryContainer,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: Colors.orange.shade900.withOpacity(0.3),
+                                          width: 1,
                                         ),
                                       ),
-                                    );
-                                  }).toList(),
+                                      child: Text(
+                                        widget.ticket.luckyLetter!,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: (_checkResult?.winningResult?.luckyLetter == widget.ticket.luckyLetter)
+                                              ? Colors.white
+                                              : Theme.of(context).colorScheme.onSecondaryContainer,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'SIGN',
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
+                              ...entry.value.map((num) {
+                                // Highlight if it's a winning number
+                                final isWinningNumber = _checkResult?.matches
+                                        .any((m) => m.setIndex == entry.key && m.matchedNumbers.contains(num)) ?? 
+                                    false;
+                                
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: isWinningNumber 
+                                        ? Colors.green.shade600 
+                                        : Theme.of(context).colorScheme.surfaceVariant,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    num.toString().padLeft(2, '0'),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: isWinningNumber ? Colors.white : null,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
                             ],
                           ),
-                        );
-                      }),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                     ],
                   ),
                 ),
@@ -135,26 +196,50 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
                   color: Theme.of(context).colorScheme.errorContainer,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Text(
-                      _errorMessage!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onErrorContainer,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Check Failed',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _errorMessage!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onErrorContainer,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: _isChecking ? null : _checkTicket,
-                icon: _isChecking
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.check_circle),
-                label: Text(_isChecking ? 'Checking...' : 'Check Results'),
-              ),
+              if (_checkResult == null && _errorMessage == null && !_isChecking)
+                FilledButton.icon(
+                  onPressed: _checkTicket,
+                  icon: const Icon(Icons.check_circle),
+                  label: const Text('Check Results'),
+                )
+              else if (_isChecking)
+                const Center(
+                  child: Column(
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 8),
+                      Text('Checking results...'),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),
@@ -190,53 +275,143 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
     final isWinner = result.isWinner;
 
     return Card(
+      elevation: 4,
       color: isWinner
-          ? Theme.of(context).colorScheme.primaryContainer
+          ? Colors.green.shade50
           : Theme.of(context).colorScheme.surfaceVariant,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: isWinner ? Colors.green.shade300 : Colors.transparent,
+          width: 2,
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
             Icon(
-              isWinner ? Icons.celebration : Icons.info_outline,
-              size: 48,
+              isWinner ? Icons.celebration : Icons.sentiment_dissatisfied,
+              size: 64,
               color: isWinner
-                  ? Theme.of(context).colorScheme.primary
+                  ? Colors.green.shade700
                   : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 12),
             Text(
-              isWinner ? 'Congratulations!' : 'Not a Winner',
+              isWinner ? 'Congratulations!' : 'Better Luck Next Time',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: isWinner
-                        ? Theme.of(context).colorScheme.primary
-                        : null,
+                    fontWeight: FontWeight.bold,
+                    color: isWinner ? Colors.green.shade800 : null,
                   ),
             ),
-            if (isWinner) ...[
+            const SizedBox(height: 16),
+            if (result.winningResult != null) ...[
+              Text(
+                'Winning Results',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
               const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                   if (result.winningResult!.luckyLetter != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade700,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        result.winningResult!.luckyLetter!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                  ...result.winningResult!.winningNumbers.map((num) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade500,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        num.toString().padLeft(2, '0'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+              const Divider(height: 32),
+            ],
+            const SizedBox(height: 8),
+            if (isWinner) ...[
               Text(
                 'You won LKR ${NumberFormat('#,###').format(result.totalWinnings)}',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
+                      color: Colors.green.shade700,
                       fontWeight: FontWeight.bold,
                     ),
               ),
-              const SizedBox(height: 16),
+              const Divider(height: 32),
               ...result.matches.map((match) {
-                return ListTile(
-                  leading: CircleAvatar(
-                    child: Text('${match.setIndex + 1}'),
-                  ),
-                  title: Text('${match.matchCount} numbers matched'),
-                  subtitle: Text(match.prizeName),
-                  trailing: Text(
-                    'LKR ${NumberFormat('#,###').format(match.prizeAmount)}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: Colors.green.shade700,
+                        foregroundColor: Colors.white,
+                        radius: 12,
+                        child: Text('${match.setIndex + 1}', style: const TextStyle(fontSize: 12)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Matched ${match.matchCount} numbers',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Text(match.prizeName, style: Theme.of(context).textTheme.bodySmall),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        'LKR ${NumberFormat('#,###').format(match.prizeAmount)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green.shade700,
+                        ),
+                      ),
+                    ],
                   ),
                 );
               }),
-            ],
+            ] else
+              const Text(
+                'None of your numbers matched the winning numbers for this draw.',
+                textAlign: TextAlign.center,
+              ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: _checkTicket,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Re-check'),
+            ),
           ],
         ),
       ),
@@ -244,27 +419,38 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
   }
 
   Future<void> _checkTicket() async {
+    if (!mounted) return;
     setState(() {
       _isChecking = true;
       _errorMessage = null;
     });
 
-    final checkTicket = sl<CheckTicket>();
-    final result = await checkTicket(widget.ticket);
+    try {
+      final checkTicket = sl<CheckTicket>();
+      final result = await checkTicket(widget.ticket);
 
-    result.fold(
-      (failure) {
-        setState(() {
-          _isChecking = false;
-          _errorMessage = failure.message;
-        });
-      },
-      (checkResult) {
-        setState(() {
-          _isChecking = false;
-          _checkResult = checkResult;
-        });
-      },
-    );
+      if (!mounted) return;
+
+      result.fold(
+        (failure) {
+          setState(() {
+            _isChecking = false;
+            _errorMessage = failure.message;
+          });
+        },
+        (checkResult) {
+          setState(() {
+            _isChecking = false;
+            _checkResult = checkResult;
+          });
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isChecking = false;
+        _errorMessage = e.toString();
+      });
+    }
   }
 }
