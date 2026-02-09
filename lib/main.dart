@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:lotto_vision/core/constants/app_constants.dart';
 import 'package:lotto_vision/core/theme/app_theme.dart';
@@ -12,9 +14,14 @@ import 'package:lotto_vision/presentation/providers/theme_provider.dart';
 import 'package:lotto_vision/presentation/providers/locale_provider.dart';
 import 'package:lotto_vision/data/models/lottery_ticket_model.dart';
 import 'package:lotto_vision/data/models/lottery_result_model.dart';
+import 'package:lotto_vision/services/notifications/notification_background_handler.dart';
+import 'package:lotto_vision/services/notifications/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // Initialize Hive
   await Hive.initFlutter();
@@ -39,11 +46,22 @@ void main() async {
   );
 }
 
-class LottoVisionApp extends ConsumerWidget {
+class LottoVisionApp extends ConsumerStatefulWidget {
   const LottoVisionApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LottoVisionApp> createState() => _LottoVisionAppState();
+}
+
+class _LottoVisionAppState extends ConsumerState<LottoVisionApp> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => ref.read(notificationServiceProvider).init());
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeMode = ref.watch(themeProvider);
     final locale = ref.watch(localeProvider);
 

@@ -25,6 +25,11 @@ dependencies:
   firebase_auth: ^5.3.3
   cloud_firestore: ^5.5.0
   firebase_storage: ^12.3.7
+  firebase_messaging: ^15.1.0
+
+  # Notifications
+  flutter_local_notifications: ^17.1.2
+  timezone: ^0.9.3
 
   # Image Processing & OCR
   google_ml_kit: ^0.18.0
@@ -100,19 +105,19 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/logo.png"
+  image_path: "assets/images/New_Logo.png"
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/images/logo.png"
+  adaptive_icon_foreground: "assets/images/New_Logo.png"
 
 # Splash Screen Configuration
 flutter_native_splash:
   color: "#FFFFFF"
-  image: "assets/images/logo.png"
+  image: "assets/images/New_Logo.png"
   android_gravity: center
   ios_content_mode: scaleAspectFit
   android: true
   ios: true
   web: false
   android_12:
-    image: "assets/images/logo.png"
+    image: "assets/images/New_Logo.png"
     color: "#FFFFFF"

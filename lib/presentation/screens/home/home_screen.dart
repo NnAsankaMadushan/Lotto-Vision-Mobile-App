@@ -1,28 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lotto_vision/core/constants/lottery_types.dart';
 import 'package:lotto_vision/presentation/screens/camera/camera_screen.dart';
 import 'package:lotto_vision/presentation/screens/history/history_screen.dart';
 import 'package:lotto_vision/presentation/screens/notifications/notification_screen.dart';
+import 'package:lotto_vision/presentation/screens/prediction/prediction_screen.dart';
 import 'package:lotto_vision/presentation/screens/results/results_screen.dart';
 import 'package:lotto_vision/presentation/screens/settings/settings_screen.dart';
 import 'package:lotto_vision/l10n/app_localizations.dart';
 
-class HomeScreen extends ConsumerStatefulWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = const [
     HomeTab(),
     ResultsScreen(),
     HistoryScreen(),
-    NotificationScreen(),
+    PredictionScreen(),
     SettingsScreen(),
   ];
 
@@ -56,9 +56,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             label: l10n.history,
           ),
           NavigationDestination(
-            icon: const Icon(Icons.notifications_outlined),
-            selectedIcon: const Icon(Icons.notifications),
-            label: l10n.notifications,
+            icon: const Icon(Icons.show_chart),
+            selectedIcon: const Icon(Icons.show_chart),
+            label: 'Prediction',
           ),
           NavigationDestination(
             icon: const Icon(Icons.settings_outlined),
@@ -83,9 +83,14 @@ class HomeTab extends StatelessWidget {
         title: Text(l10n.appName),
         actions: [
           IconButton(
-            icon: const Icon(Icons.info_outline),
+            icon: const Icon(Icons.notifications_outlined),
             onPressed: () {
-              // Show about dialog
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationScreen(),
+                ),
+              );
             },
           ),
         ],

@@ -1,4 +1,4 @@
-package com.example.lotto_vision
+package com.example.lottovision
 
 import io.flutter.embedding.android.FlutterActivity
 
