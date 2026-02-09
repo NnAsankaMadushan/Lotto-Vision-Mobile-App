@@ -33,10 +33,11 @@ enum LotteryType {
   const LotteryType(this.displayName, this.l10nKey);
 
   static String _normalize(String s) =>
-      s.toLowerCase().replaceAll(RegExp(r'\s+'), '');
+      s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
 
   static LotteryType fromString(String name) {
     final n = _normalize(name);
+    if (n.isEmpty) return LotteryType.unknown;
     return LotteryType.values.firstWhere(
       (type) =>
           _normalize(type.displayName).contains(n) ||

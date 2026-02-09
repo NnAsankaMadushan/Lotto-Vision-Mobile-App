@@ -40,6 +40,64 @@ class LotteryParser {
   String _normalize(String s) =>
       s.toLowerCase().replaceAll(RegExp(r'\s+'), '');
 
+  bool _isDigitCodeUnit(int codeUnit) => codeUnit >= 48 && codeUnit <= 57;
+
+  String _collapseDigitSpaces(String input) {
+    if (!input.contains(' ')) return input;
+    final buffer = StringBuffer();
+    for (int i = 0; i < input.length; i++) {
+      final char = input[i];
+      if (char == ' ' && i > 0 && i < input.length - 1) {
+        final prev = input.codeUnitAt(i - 1);
+        final next = input.codeUnitAt(i + 1);
+        if (_isDigitCodeUnit(prev) && _isDigitCodeUnit(next)) {
+          continue;
+        }
+      }
+      buffer.write(char);
+    }
+    return buffer.toString();
+  }
+
+  bool _isKnownYearToken(String value) =>
+      value == '2024' || value == '2025' || value == '2026';
+
+  bool _isSerialLikeLine(String line) => RegExp(r'\d{8,}').hasMatch(line);
+
+  int? _firstStandaloneDrawNumber(String line) {
+    final matches = RegExp(r'\d{3,5}').allMatches(line);
+    for (final m in matches) {
+      final start = m.start;
+      final end = m.end;
+      if (start > 0 && _isDigitCodeUnit(line.codeUnitAt(start - 1))) continue;
+      if (end < line.length && _isDigitCodeUnit(line.codeUnitAt(end))) continue;
+      final valStr = m.group(0)!;
+      if (_isKnownYearToken(valStr)) continue;
+      final val = int.tryParse(valStr);
+      if (val != null) return val;
+    }
+    return null;
+  }
+
+  int? _extractDrawNumberFromDateLine(String line) {
+    if (!line.contains('/') && !line.contains('-')) return null;
+    final compact = _collapseDigitSpaces(line);
+    final patterns = [
+      RegExp(r'(\d{4})\s*[-/]\s*(\d{1,2})\s*[-/]\s*(\d{1,2})\D{0,12}(\d{3,5})(?=\D|$)'),
+      RegExp(r'(\d{1,2})\s*[-/]\s*(\d{1,2})\s*[-/]\s*(\d{4})\D{0,12}(\d{3,5})(?=\D|$)'),
+    ];
+
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(compact);
+      if (match == null) continue;
+      final valStr = match.group(4)!;
+      if (_isKnownYearToken(valStr)) continue;
+      final val = int.tryParse(valStr);
+      if (val != null) return val;
+    }
+    return null;
+  }
+
   LotteryType detectLotteryType(String text) {
     if (kDebugMode) {
       debugPrint('[LotteryParser] --- RAW OCR TEXT START ---');
@@ -79,6 +137,11 @@ class LotteryParser {
     final lines = text.split('\n');
     final drawKeywords = ['draw', 'dran', 'dra', 'drew', 'dinum', 'no', 'number', '#', 'na', 'n.', 'ge', 'g.', 'g', 'දිනුම්', 'අංකය'];
 
+    for (final line in lines) {
+      final fromDate = _extractDrawNumberFromDateLine(line);
+      if (fromDate != null) return fromDate;
+    }
+
     for (int i = 0; i < lines.length; i++) {
       final line = lines[i].toLowerCase();
       final trimmed = lines[i].trim();
@@ -98,29 +161,19 @@ class LotteryParser {
         if (line.contains(kw)) {
           // 1. Look for number on the SAME line
           // Allow single letter prefix like g2129 or n2129
-          final matches = RegExp(r'[a-z]?(\d{3,5})\b').allMatches(trimmed.toLowerCase());
-          for (var m in matches) {
-            final valStr = m.group(1)!;
-            if (valStr == '2024' || valStr == '2025' || valStr == '2026') continue;
-            final val = int.tryParse(valStr);
-            if (val != null) return val;
-          }
+          final sameLine = _firstStandaloneDrawNumber(trimmed.toLowerCase());
+          if (sameLine != null) return sameLine;
 
           // 2. Look for number on PREVIOUS or NEXT line
           for (int dist in [-1, 1]) {
             int targetIdx = i + dist;
             if (targetIdx >= 0 && targetIdx < lines.length) {
               final nextLineText = lines[targetIdx].trim().toLowerCase();
+              if (_isSerialLikeLine(nextLineText)) continue;
               if (RegExp(r'\d+').allMatches(nextLineText).length > 2) continue; // Skip number sets
-              
-              final match = RegExp(r'[a-z]?(\d{3,5})\b').firstMatch(nextLineText);
-              if (match != null) {
-                final valStr = match.group(1)!;
-                if (valStr != '2024' && valStr != '2025' && valStr != '2026') {
-                  final val = int.tryParse(valStr);
-                  if (val != null) return val;
-                }
-              }
+
+              final neighborVal = _firstStandaloneDrawNumber(nextLineText);
+              if (neighborVal != null) return neighborVal;
             }
           }
         }
@@ -132,7 +185,7 @@ class LotteryParser {
     final allDigitMatches = RegExp(r'\b(\d{4})\b').allMatches(text);
     for (var m in allDigitMatches) {
       final valStr = m.group(1)!;
-      if (valStr == '2024' || valStr == '2025' || valStr == '2026') continue;
+      if (_isKnownYearToken(valStr)) continue;
       
       int offset = m.start;
       int lineStart = text.lastIndexOf('\n', offset);
@@ -156,13 +209,14 @@ class LotteryParser {
 
   DateTime? extractDrawDate(String text) {
     // Pattern: DD/MM/YYYY or DD-MM-YYYY
+    final normalized = _collapseDigitSpaces(text);
     final patterns = [
-      RegExp(r'(\d{1,2})[-/](\d{1,2})[-/](\d{4})'),
-      RegExp(r'(\d{4})[-/](\d{1,2})[-/](\d{1,2})'),
+      RegExp(r'(\d{1,2})\s*[-/]\s*(\d{1,2})\s*[-/]\s*(\d{4})'),
+      RegExp(r'(\d{4})\s*[-/]\s*(\d{1,2})\s*[-/]\s*(\d{1,2})'),
     ];
 
     for (var pattern in patterns) {
-      final match = pattern.firstMatch(text);
+      final match = pattern.firstMatch(normalized);
       if (match != null) {
         try {
           if (pattern == patterns[0]) {

@@ -237,6 +237,7 @@ class LotteryResultsService {
     LotteryType requestedType,
   ) {
     final resultBoxes = document.querySelectorAll('li.lbox');
+    final seenNames = <String>[];
     if (kDebugMode) {
       debugPrint('[NLB] parse: lbox count=${resultBoxes.length} type=${requestedType.name}');
     }
@@ -246,6 +247,7 @@ class LotteryResultsService {
       if (titleSpans.length < 3) continue;
 
       final lotteryName = titleSpans[0].text.trim();
+      seenNames.add(lotteryName);
       final type = LotteryType.fromString(lotteryName);
       if (type != requestedType) continue;
 
@@ -303,6 +305,9 @@ class LotteryResultsService {
 
     if (kDebugMode) {
       debugPrint('[NLB] parse: no matching lbox found for type=${requestedType.name}');
+      if (seenNames.isNotEmpty) {
+        debugPrint('[NLB] parse: available names=${seenNames.join(' | ')}');
+      }
     }
     throw const ResultsNotFoundException('Results not found for this lottery type');
   }

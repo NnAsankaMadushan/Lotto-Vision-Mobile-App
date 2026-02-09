@@ -111,6 +111,8 @@ class _TicketCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(l10n.drawNumber(ticket.drawNumber)),
             Text(l10n.drawDate(drawDate)),
+            if (ticket.luckyLetter != null && ticket.luckyLetter!.trim().isNotEmpty)
+              Text('Lucky Letter: ${ticket.luckyLetter!.trim()}'),
             if (status != null)
               Text(
                 status,
