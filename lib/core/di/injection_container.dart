@@ -4,10 +4,13 @@ import 'package:lotto_vision/data/datasources/remote_datasource.dart';
 import 'package:lotto_vision/data/repositories/lottery_repository_impl.dart';
 import 'package:lotto_vision/domain/repositories/lottery_repository.dart';
 import 'package:lotto_vision/domain/usecases/check_ticket.dart';
+import 'package:lotto_vision/domain/usecases/generate_predictions.dart';
 import 'package:lotto_vision/domain/usecases/get_all_tickets.dart';
 import 'package:lotto_vision/domain/usecases/scan_ticket.dart';
+import 'package:lotto_vision/services/lottery/lottery_prediction_engine.dart';
 import 'package:lotto_vision/services/lottery/lottery_results_service.dart';
 import 'package:lotto_vision/services/lottery/dlb_results_service.dart';
+import 'package:lotto_vision/services/lottery/lottery_history_service.dart';
 import 'package:lotto_vision/services/lottery/ticket_checker.dart';
 import 'package:lotto_vision/services/ocr/lottery_parser.dart';
 import 'package:lotto_vision/services/ocr/ocr_service.dart';
@@ -21,6 +24,14 @@ Future<void> init() async {
   sl.registerLazySingleton(() => LotteryResultsService());
   sl.registerLazySingleton(() => DlbResultsService());
   sl.registerLazySingleton(() => TicketChecker());
+  sl.registerLazySingleton(
+    () => LotteryHistoryService(
+      nlbResultsService: sl(),
+      dlbResultsService: sl(),
+      localDataSource: sl(),
+    ),
+  );
+  sl.registerLazySingleton(() => const LotteryPredictionEngine());
 
   // Data sources
   sl.registerLazySingleton<RemoteDataSource>(
@@ -46,6 +57,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ScanTicket(sl()));
   sl.registerLazySingleton(() => CheckTicket(sl()));
   sl.registerLazySingleton(() => GetAllTickets(sl()));
+  sl.registerLazySingleton(() => GeneratePredictions(sl(), sl()));
 
   // Initialize local database
   await (sl<LocalDataSource>() as LocalDataSourceImpl).init();
