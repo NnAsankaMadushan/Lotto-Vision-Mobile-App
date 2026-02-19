@@ -103,7 +103,8 @@ class _ResultCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final date = DateFormat.yMMMMd().format(item.drawDate);
     final sign = (item.sign ?? '').trim();
-    final hasSign = sign.isNotEmpty;
+    final hasSign = sign.isNotEmpty && int.tryParse(sign) == null;
+    final useThreeRows = _usesThreeRowLayout(item.title);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -132,32 +133,101 @@ class _ResultCard extends StatelessWidget {
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (hasSign) _SignBadge(sign: sign),
-                if (hasSign) const SizedBox(width: 10),
-                Expanded(
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (var i = 0; i < item.numbers.length; i++)
-                        _NumberChip(
-                          number: int.tryParse(item.numbers[i]) ?? 0,
-                          isHighlighted: item.provider == _ResultProvider.nlb &&
-                              item.title.toLowerCase().contains('mega power') &&
-                              i == 0,
-                        ),
-                    ],
+            if (useThreeRows)
+              _ThreeRowNumbers(
+                numbers: item.numbers,
+                sign: hasSign ? sign : null,
+              )
+            else
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (hasSign) _SignBadge(sign: sign),
+                  if (hasSign) const SizedBox(width: 10),
+                  Expanded(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (var i = 0; i < item.numbers.length; i++)
+                          _NumberChip(
+                            number: int.tryParse(item.numbers[i]) ?? 0,
+                            isHighlighted: item.provider == _ResultProvider.nlb &&
+                                item.title.toLowerCase().contains('mega power') &&
+                                i == 0,
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
           ],
         ),
       ),
     );
+  }
+}
+
+bool _usesThreeRowLayout(String title) {
+  final normalized = title.toLowerCase().replaceAll(RegExp(r'[^a-z]'), '');
+  return normalized.contains('adasampatha') ||
+      normalized.contains('jayasampatha');
+}
+
+class _ThreeRowNumbers extends StatelessWidget {
+  final List<String> numbers;
+  final String? sign;
+
+  const _ThreeRowNumbers({
+    required this.numbers,
+    required this.sign,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _splitIntoThreeRows(numbers);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) ...[
+          if (rowIndex > 0) const SizedBox(height: 8),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var i = 0; i < rows[rowIndex].length; i++) ...[
+                if (i > 0) const SizedBox(width: 8),
+                _NumberChip(
+                  number: int.tryParse(rows[rowIndex][i]) ?? 0,
+                  padToTwoDigits: false,
+                ),
+              ],
+              if (rowIndex == rows.length - 1 && sign != null) ...[
+                const SizedBox(width: 8),
+                _SignBadge(sign: sign!),
+              ],
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  List<List<String>> _splitIntoThreeRows(List<String> values) {
+    const rowSizes = [2, 3, 4];
+    final rows = <List<String>>[];
+    var cursor = 0;
+
+    for (final size in rowSizes) {
+      if (cursor >= values.length) break;
+      final end = (cursor + size > values.length) ? values.length : cursor + size;
+      rows.add(values.sublist(cursor, end));
+      cursor = end;
+    }
+
+    if (cursor < values.length) {
+      rows.add(values.sublist(cursor));
+    }
+    return rows;
   }
 }
 
@@ -226,10 +296,12 @@ String _signFallbackLetter(String sign) {
 class _NumberChip extends StatelessWidget {
   final int number;
   final bool isHighlighted;
+  final bool padToTwoDigits;
 
   const _NumberChip({
     required this.number,
     this.isHighlighted = false,
+    this.padToTwoDigits = true,
   });
 
   @override
@@ -255,7 +327,7 @@ class _NumberChip extends StatelessWidget {
         ],
       ),
       child: Text(
-        number.toString().padLeft(2, '0'),
+        padToTwoDigits ? number.toString().padLeft(2, '0') : number.toString(),
         style: Theme.of(context)
             .textTheme
             .titleSmall

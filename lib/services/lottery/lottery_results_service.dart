@@ -255,22 +255,9 @@ class LotteryResultsService {
       final drawDateText = titleSpans[2].text.trim();
       final drawDate = _parseNlbDate(drawDateText);
 
-      final numberLis = box.querySelectorAll('li');
-      final numbers = <int>[];
-      String? luckyLetter;
-      for (final li in numberLis) {
-        final title = (li.attributes['title'] ?? '').toLowerCase().trim();
-        final isNumber = title.startsWith('number') ||
-            li.classes.any((c) => c.toLowerCase().startsWith('number'));
-        
-        final text = li.text.trim();
-        final n = int.tryParse(text);
-        if (isNumber && n != null) {
-          numbers.add(n);
-        } else if (luckyLetter == null && text.isNotEmpty && n == null) {
-          luckyLetter = text;
-        }
-      }
+      final parsedValues = _extractNlbNumbersAndSign(box);
+      final numbers = parsedValues.numbers;
+      final luckyLetter = parsedValues.sign;
 
       final config = LotteryConfig.getConfig(requestedType);
       final winningNumbers =
@@ -331,16 +318,8 @@ class LotteryResultsService {
       final drawDateText = titleSpans[2].text.trim();
       final drawDate = _parseNlbDate(drawDateText);
 
-      final numberLis = box.querySelectorAll('li');
-      final numbers = <int>[];
-      for (final li in numberLis) {
-        final title = (li.attributes['title'] ?? '').toLowerCase().trim();
-        final isNumber = title.startsWith('number') ||
-            li.classes.any((c) => c.toLowerCase().startsWith('number'));
-        if (!isNumber) continue;
-        final n = int.tryParse(li.text.trim());
-        if (n != null) numbers.add(n);
-      }
+      final parsedValues = _extractNlbNumbersAndSign(box);
+      final numbers = parsedValues.numbers;
 
       final config = LotteryConfig.getConfig(type);
       final winningNumbers =
@@ -369,6 +348,56 @@ class LotteryResultsService {
       debugPrint('[NLB] parseAll: results count=${results.length}');
     }
     return results;
+  }
+
+  _NlbParsedValues _extractNlbNumbersAndSign(dom.Element box) {
+    final numberLis = box.querySelectorAll('li');
+    final numbers = <int>[];
+    String? sign;
+    var startedNumbers = false;
+
+    for (final li in numberLis) {
+      final text = li.text.replaceAll(RegExp(r'\s+'), ' ').trim();
+      if (text.isEmpty) continue;
+
+      final normalized = text.toLowerCase();
+      final title = (li.attributes['title'] ?? '').toLowerCase().trim();
+      final hasNumberHint = title.startsWith('number') ||
+          li.classes.any((c) => c.toLowerCase().startsWith('number'));
+      final n = int.tryParse(text);
+
+      if (n != null && hasNumberHint) {
+        numbers.add(n);
+        startedNumbers = true;
+        continue;
+      }
+
+      // Some NLB rows omit a number title/class for one or more balls.
+      if (n != null && startedNumbers) {
+        numbers.add(n);
+        continue;
+      }
+
+      if (startedNumbers) {
+        // Stop at the first non-numeric token after the main number run.
+        break;
+      }
+
+      if (sign == null && n == null && !_isIgnoredNlbLabel(normalized)) {
+        sign = text;
+      }
+    }
+
+    return _NlbParsedValues(numbers: numbers, sign: sign);
+  }
+
+  bool _isIgnoredNlbLabel(String text) {
+    final lower = text.toLowerCase();
+    return lower.contains('promotional') ||
+        lower.contains('special draw') ||
+        lower == 'draw' ||
+        lower == 'result' ||
+        lower == 'more';
   }
 
   DateTime _parseNlbDate(String input) {
@@ -436,26 +465,9 @@ class LotteryResultsService {
               ? logoPath
               : '${AppConstants.nlbBaseUrl}/${logoPath.replaceFirst(RegExp(r'^/+'), '')}');
 
-      final numberLis = box.querySelectorAll('li');
-      final numbers = <int>[];
-      String? sign;
-      for (final li in numberLis) {
-        final title = (li.attributes['title'] ?? '').toLowerCase().trim();
-        final isNumber = title.startsWith('number') ||
-            li.classes.any((c) => c.toLowerCase().startsWith('number'));
-
-        final text = li.text.trim();
-        final n = int.tryParse(text);
-        if (isNumber && n != null) {
-          numbers.add(n);
-          continue;
-        }
-
-        // First non-number label in the block (e.g. Zodiac or Letter badge).
-        if (sign == null && text.isNotEmpty && n == null) {
-          sign = text;
-        }
-      }
+      final parsedValues = _extractNlbNumbersAndSign(box);
+      final numbers = parsedValues.numbers;
+      final sign = parsedValues.sign;
 
       final config = LotteryConfig.getConfig(type);
       final winningNumbers =
@@ -500,5 +512,15 @@ class LotteryResultWithMeta {
     required this.result,
     this.sign,
     this.logoUrl,
+  });
+}
+
+class _NlbParsedValues {
+  final List<int> numbers;
+  final String? sign;
+
+  const _NlbParsedValues({
+    required this.numbers,
+    required this.sign,
   });
 }

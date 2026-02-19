@@ -219,11 +219,11 @@ class LotteryConfig {
     ),
     LotteryType.subaDawasak: const LotteryConfig(
       type: LotteryType.subaDawasak,
-      numbersCount: 2,
+      numbersCount: 3,
       minNumber: 1,
       maxNumber: 99,
       prizes: [
-        Prize(match: 2, name: '2 Numbers', estimatedAmount: 100),
+        Prize(match: 3, name: '3 Numbers', estimatedAmount: 100),
       ],
     ),
   };

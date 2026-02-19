@@ -125,9 +125,13 @@ class DlbResultsService {
       }
 
       final logoUrl = _toAbsoluteUrl(logoImg?.attributes['src']);
-      final sign = values.isEmpty ? null : values.firstWhere(
-          (v) => int.tryParse(v) == null,
-          orElse: () => values.first);
+      String? sign;
+      for (final value in values) {
+        if (int.tryParse(value) == null) {
+          sign = value;
+          break;
+        }
+      }
 
       results.add(
         DlbResultWithMeta(
