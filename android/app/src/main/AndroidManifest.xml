@@ -13,7 +13,7 @@
         android:maxSdkVersion="32" />
 
     <application
-        android:label="lotto_vision"
+        android:label="Lotto Vision"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <meta-data

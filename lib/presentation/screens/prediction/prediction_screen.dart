@@ -151,8 +151,6 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              _InfoCard(),
-              const SizedBox(height: 16),
               _ControlsCard(
                 selectedType: _selectedType,
                 sets: _sets,
@@ -194,37 +192,6 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _InfoCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: Theme.of(context).colorScheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              Icons.info_outline,
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Predictions are statistical suggestions based on cached draw history. '
-                'Lottery outcomes are random and no model can guarantee a win.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -294,6 +261,8 @@ class _ControlsCard extends StatelessWidget {
                       DropdownMenuItem(value: 3, child: Text('3 sets')),
                       DropdownMenuItem(value: 5, child: Text('5 sets')),
                       DropdownMenuItem(value: 8, child: Text('8 sets')),
+                      DropdownMenuItem(value: 10, child: Text('10 sets')),
+                      DropdownMenuItem(value: 12, child: Text('12 sets')),
                     ],
                     onChanged: onSetsChanged,
                     decoration: const InputDecoration(
@@ -372,10 +341,18 @@ class _PredictionContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (prediction.sets.isEmpty) {
+      return const _NoHistoryState();
+    }
+
     final dateRange = _formatHistoryRange(prediction);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (prediction.predictedSigns.isNotEmpty) ...[
+          _SignPredictionCard(signs: prediction.predictedSigns),
+          const SizedBox(height: 12),
+        ],
         _SummaryCard(
           prediction: prediction,
           dateRange: dateRange,
@@ -385,7 +362,7 @@ class _PredictionContent extends StatelessWidget {
           _PredictionSetCard(
             index: i,
             set: prediction.sets[i],
-            sign: prediction.predictedSign,
+            sign: _signForSet(prediction, i),
           ),
           const SizedBox(height: 12),
         ],
@@ -396,6 +373,78 @@ class _PredictionContent extends StatelessWidget {
             coldNumbers: prediction.coldNumbers,
           ),
       ],
+    );
+  }
+}
+
+class _NoHistoryState extends StatelessWidget {
+  const _NoHistoryState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          'No past results found. Sync history to generate predictions.',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      ),
+    );
+  }
+}
+
+class _SignPredictionCard extends StatelessWidget {
+  final List<String> signs;
+
+  const _SignPredictionCard({
+    required this.signs,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = signs.first;
+    final alternatives = signs.skip(1).take(11).toList(growable: false);
+    final hiddenCount = signs.length > 12 ? signs.length - 12 : 0;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Predicted letter / zodiac',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                _SignBadge(sign: primary),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    primary,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            if (alternatives.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Alternatives: ${alternatives.join(', ')}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              if (hiddenCount > 0)
+                Text(
+                  '+$hiddenCount more',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
@@ -411,9 +460,7 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final subtitle = prediction.isFallback
-        ? 'No cached results yet. Showing random suggestions.'
-        : 'Based on ${prediction.drawsUsed} cached draws ($dateRange).';
+    final subtitle = 'Based on ${prediction.drawsUsed} cached draws ($dateRange).';
 
     return Card(
       child: Padding(
@@ -735,4 +782,10 @@ String _formatHistoryRange(PredictionResult prediction) {
   }
   final formatter = DateFormat.yMMMd();
   return '${formatter.format(start)} - ${formatter.format(end)}';
+}
+
+String? _signForSet(PredictionResult prediction, int setIndex) {
+  if (setIndex < 0) return null;
+  if (setIndex >= prediction.predictedSigns.length) return null;
+  return prediction.predictedSigns[setIndex];
 }

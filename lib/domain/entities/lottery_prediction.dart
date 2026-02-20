@@ -25,6 +25,7 @@ class PredictionResult extends Equatable {
   final List<int> hotNumbers;
   final List<int> coldNumbers;
   final String? predictedSign;
+  final List<String> predictedSigns;
   final bool isFallback;
 
   const PredictionResult({
@@ -38,6 +39,7 @@ class PredictionResult extends Equatable {
     required this.hotNumbers,
     required this.coldNumbers,
     required this.predictedSign,
+    required this.predictedSigns,
     required this.isFallback,
   });
 
@@ -53,6 +55,7 @@ class PredictionResult extends Equatable {
         hotNumbers,
         coldNumbers,
         predictedSign,
+        predictedSigns,
         isFallback,
       ];
 }

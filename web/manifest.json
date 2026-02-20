@@ -1,6 +1,6 @@
 {
-    "name": "lotto_vision",
-    "short_name": "lotto_vision",
+    "name": "Lotto Vision",
+    "short_name": "Lotto Vision",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
