@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lotto_vision/l10n/app_localizations.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:lotto_vision/presentation/screens/scanner/scanner_screen.dart';
+import 'package:lotto_vision/presentation/widgets/screen_theme.dart';
 import 'dart:io' show Platform;
 
 class CameraScreen extends ConsumerStatefulWidget {
@@ -18,58 +20,74 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Scan Ticket'),
+        automaticallyImplyLeading: false,
+        leading: buildLottoBackButton(context),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        flexibleSpace: buildLottoAppBarGradient(context),
+        title: LottoBrandedAppBarTitle(
+          section: l10n.scanTicket,
+        ),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Icon(
-                Icons.qr_code_scanner,
-                size: 120,
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-              ),
-              const SizedBox(height: 32),
-              Text(
-                'Choose an option',
-                style: Theme.of(context).textTheme.headlineSmall,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 48),
-              FilledButton.icon(
-                onPressed: _isProcessing ? null : () => _pickImage(ImageSource.camera),
-                icon: const Icon(Icons.camera_alt),
-                label: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Text('Take Photo'),
+      body: LottoGradientBackground(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Icon(
+                  Icons.qr_code_scanner,
+                  size: 120,
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
                 ),
-              ),
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: _isProcessing ? null : () => _pickImage(ImageSource.gallery),
-                icon: const Icon(Icons.photo_library),
-                label: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Text('Choose from Gallery'),
-                ),
-              ),
-              if (_isProcessing) ...[
                 const SizedBox(height: 32),
-                const Center(
-                  child: CircularProgressIndicator(),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Processing image...',
+                Text(
+                  'Choose an option',
+                  style: Theme.of(context).textTheme.headlineSmall,
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 48),
+                FilledButton.icon(
+                  onPressed:
+                      _isProcessing ? null : () => _pickImage(ImageSource.camera),
+                  icon: const Icon(Icons.camera_alt),
+                  label: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Text('Take Photo'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed:
+                      _isProcessing ? null : () => _pickImage(ImageSource.gallery),
+                  icon: const Icon(Icons.photo_library),
+                  label: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Text('Choose from Gallery'),
+                  ),
+                ),
+                if (_isProcessing) ...[
+                  const SizedBox(height: 32),
+                  const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Processing image...',
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

@@ -5,6 +5,7 @@ import 'package:lotto_vision/core/di/injection_container.dart';
 import 'package:lotto_vision/domain/entities/lottery_ticket.dart';
 import 'package:lotto_vision/domain/usecases/check_ticket.dart';
 import 'package:intl/intl.dart';
+import 'package:lotto_vision/presentation/widgets/screen_theme.dart';
 
 class TicketDetailScreen extends ConsumerStatefulWidget {
   final LotteryTicket ticket;
@@ -38,7 +39,17 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ticket Details'),
+        automaticallyImplyLeading: false,
+        leading: buildLottoBackButton(context),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        flexibleSpace: buildLottoAppBarGradient(context),
+        title: LottoBrandedAppBarTitle(
+          section: 'Ticket Details',
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_outline),
@@ -48,55 +59,59 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (widget.ticket.imageUrl != null)
-                Container(
-                  height: 200,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.outline,
+      body: LottoGradientBackground(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (widget.ticket.imageUrl != null)
+                  Container(
+                    height: 200,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(11),
+                      child: Image.file(
+                        File(widget.ticket.imageUrl!),
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(11),
-                    child: Image.file(
-                      File(widget.ticket.imageUrl!),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 16),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.ticket.lotteryType.displayName,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 8),
-                      _buildInfoRow('Draw Number', '#${widget.ticket.drawNumber}'),
-                      _buildInfoRow(
-                        'Draw Date',
-                        DateFormat('MMM dd, yyyy').format(widget.ticket.drawDate),
-                      ),
-                      if (widget.ticket.luckyLetter != null)
-                        _buildInfoRow('Lucky Letter', widget.ticket.luckyLetter!),
-                      if (widget.ticket.serialNumber != null)
-                        _buildInfoRow('Serial', widget.ticket.serialNumber!),
-                      const Divider(height: 24),
-                      Text(
-                        'Your Numbers',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.ticket.lotteryType.displayName,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        _buildInfoRow(
+                          'Draw Number',
+                          '#${widget.ticket.drawNumber}',
+                        ),
+                        _buildInfoRow(
+                          'Draw Date',
+                          DateFormat('MMM dd, yyyy').format(widget.ticket.drawDate),
+                        ),
+                        if (widget.ticket.luckyLetter != null)
+                          _buildInfoRow('Lucky Letter', widget.ticket.luckyLetter!),
+                        if (widget.ticket.serialNumber != null)
+                          _buildInfoRow('Serial', widget.ticket.serialNumber!),
+                        const Divider(height: 24),
+                        Text(
+                          'Your Numbers',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                   const SizedBox(height: 12),
                   ...widget.ticket.numberSets.asMap().entries.map((entry) {
                     final i = entry.key;
@@ -185,62 +200,66 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
                       ),
                     );
                   }).toList(),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (_checkResult != null) _buildResultCard(),
-              if (_errorMessage != null)
-                Card(
-                  color: Theme.of(context).colorScheme.errorContainer,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Check Failed',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _errorMessage!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onErrorContainer,
-                          ),
-                        ),
                       ],
                     ),
                   ),
                 ),
-              const SizedBox(height: 16),
-              if (_checkResult == null && _errorMessage == null && !_isChecking)
-                FilledButton.icon(
-                  onPressed: _checkTicket,
-                  icon: const Icon(Icons.check_circle),
-                  label: const Text('Check Results'),
-                )
-              else if (_isChecking)
-                const Center(
-                  child: Column(
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 8),
-                      Text('Checking results...'),
-                    ],
+                const SizedBox(height: 16),
+                if (_checkResult != null) _buildResultCard(),
+                if (_errorMessage != null)
+                  Card(
+                    color: Theme.of(context).colorScheme.errorContainer,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Check Failed',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _errorMessage!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onErrorContainer,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-            ],
+                const SizedBox(height: 16),
+                if (_checkResult == null && _errorMessage == null && !_isChecking)
+                  FilledButton.icon(
+                    onPressed: _checkTicket,
+                    icon: const Icon(Icons.check_circle),
+                    label: const Text('Check Results'),
+                  )
+                else if (_isChecking)
+                  const Center(
+                    child: Column(
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 8),
+                        Text('Checking results...'),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

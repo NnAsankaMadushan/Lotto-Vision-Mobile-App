@@ -8,6 +8,7 @@ import 'package:lotto_vision/core/di/injection_container.dart';
 import 'package:lotto_vision/core/errors/failures.dart';
 import 'package:lotto_vision/domain/entities/lottery_prediction.dart';
 import 'package:lotto_vision/domain/usecases/generate_predictions.dart';
+import 'package:lotto_vision/presentation/widgets/screen_theme.dart';
 import 'package:lotto_vision/services/lottery/lottery_history_service.dart';
 
 final List<LotteryType> _predictionTypes = (() {
@@ -133,54 +134,66 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Prediction'),
+        automaticallyImplyLeading: false,
+        leading: buildLottoBackButton(context),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        flexibleSpace: buildLottoAppBarGradient(context),
+        title: LottoBrandedAppBarTitle(
+          section: 'Prediction',
+        ),
       ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _InfoCard(),
-            const SizedBox(height: 16),
-            _ControlsCard(
-              selectedType: _selectedType,
-              sets: _sets,
-              historyLimit: _historyLimit,
-              isSyncing: _isSyncing,
-              lastSyncLabel: _lastSyncLabel,
-              onTypeChanged: (value) {
-                if (value == null) return;
-                setState(() => _selectedType = value);
-              },
-              onSetsChanged: (value) {
-                if (value == null) return;
-                setState(() => _sets = value);
-              },
-              onHistoryChanged: (value) {
-                if (value == null) return;
-                setState(() => _historyLimit = value);
-              },
-              onRegenerate: () {
-                setState(() => _seedBump += 1);
-              },
-              onSyncHistory: _syncHistory,
-            ),
-            const SizedBox(height: 16),
-            predictionAsync.when(
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: CircularProgressIndicator(),
+      body: LottoGradientBackground(
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _InfoCard(),
+              const SizedBox(height: 16),
+              _ControlsCard(
+                selectedType: _selectedType,
+                sets: _sets,
+                historyLimit: _historyLimit,
+                isSyncing: _isSyncing,
+                lastSyncLabel: _lastSyncLabel,
+                onTypeChanged: (value) {
+                  if (value == null) return;
+                  setState(() => _selectedType = value);
+                },
+                onSetsChanged: (value) {
+                  if (value == null) return;
+                  setState(() => _sets = value);
+                },
+                onHistoryChanged: (value) {
+                  if (value == null) return;
+                  setState(() => _historyLimit = value);
+                },
+                onRegenerate: () {
+                  setState(() => _seedBump += 1);
+                },
+                onSyncHistory: _syncHistory,
+              ),
+              const SizedBox(height: 16),
+              predictionAsync.when(
+                loading: () => const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                error: (error, _) => _ErrorState(
+                  message: _errorMessage(error),
+                  onRetry: () => ref.invalidate(_predictionProvider(query)),
+                ),
+                data: (prediction) => _PredictionContent(
+                  prediction: prediction,
                 ),
               ),
-              error: (error, _) => _ErrorState(
-                message: _errorMessage(error),
-                onRetry: () => ref.invalidate(_predictionProvider(query)),
-              ),
-              data: (prediction) => _PredictionContent(
-                prediction: prediction,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

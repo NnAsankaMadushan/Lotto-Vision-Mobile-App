@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lotto_vision/l10n/app_localizations.dart';
 import 'package:lotto_vision/presentation/providers/notification_provider.dart';
+import 'package:lotto_vision/presentation/widgets/screen_theme.dart';
 
 class NotificationScreen extends ConsumerWidget {
   const NotificationScreen({super.key});
@@ -15,7 +16,17 @@ class NotificationScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.notifications),
+        automaticallyImplyLeading: false,
+        leading: buildLottoBackButton(context),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        flexibleSpace: buildLottoAppBarGradient(context),
+        title: LottoBrandedAppBarTitle(
+          section: l10n.notifications,
+        ),
         actions: [
           if (unreadCount > 0)
             IconButton(
@@ -26,23 +37,26 @@ class NotificationScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: SafeArea(
-        child: notifications.isEmpty
-            ? const _EmptyNotificationsState()
-            : ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: notifications.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final item = notifications[index];
-                  return _NotificationCard(
-                    notification: item,
-                    onTap: () => ref
-                        .read(notificationsProvider.notifier)
-                        .markRead(item.id),
-                  );
-                },
-              ),
+      body: LottoGradientBackground(
+        child: SafeArea(
+          child: notifications.isEmpty
+              ? const _EmptyNotificationsState()
+              : ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: notifications.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final item = notifications[index];
+                    return _NotificationCard(
+                      notification: item,
+                      onTap: () =>
+                          ref.read(notificationsProvider.notifier).markRead(
+                                item.id,
+                              ),
+                    );
+                  },
+                ),
+        ),
       ),
     );
   }

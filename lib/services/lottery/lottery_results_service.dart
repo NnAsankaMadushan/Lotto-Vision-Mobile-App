@@ -53,6 +53,8 @@ class LotteryResultsService {
     LotteryType lotteryType,
     int drawNumber,
   ) async {
+    // Legacy endpoint fallback: historically RN worked, but it may now ignore RN
+    // and always return the latest draw for some lottery pages.
     try {
       final html = await _getNlbHtml(
         AppConstants.resultsEndpoint,
@@ -64,13 +66,70 @@ class LotteryResultsService {
 
       final document = html_parser.parse(html);
       final result = _parseLatestResultFromResultsPage(document, lotteryType);
-      if (result.drawNumber != drawNumber) {
-        throw const ResultsNotFoundException('Result not found for this draw');
+      if (result.drawNumber == drawNumber) {
+        return result;
       }
-      return result;
+
+      if (kDebugMode) {
+        debugPrint(
+          '[NLB] fetchByDraw RN ignored for ${lotteryType.name}: requested=$drawNumber got=${result.drawNumber}; falling back to history page',
+        );
+      }
+    } catch (_) {
+      // Fall through to history-page parser.
+    }
+
+    try {
+      final history = await fetchHistoryResults(lotteryType, limit: 250);
+      LotteryResult? match;
+      for (final item in history) {
+        if (item.drawNumber == drawNumber) {
+          match = item;
+          break;
+        }
+      }
+      if (match != null) {
+        return match;
+      }
+      throw const ResultsNotFoundException('Result not found for this draw');
     } catch (e) {
       throw ServerException('Failed to fetch result: ${e.toString()}');
     }
+  }
+
+  /// Fetch a batch of recent draws from NLB history page for a specific lottery.
+  Future<List<LotteryResult>> fetchHistoryResults(
+    LotteryType lotteryType, {
+    int limit = 100,
+  }) async {
+    final slug = _nlbLotterySlug(lotteryType);
+    if (slug.isEmpty) {
+      throw const ResultsNotFoundException('Lottery is not available on NLB');
+    }
+
+    try {
+      final html = await _getNlbHtml('/results/$slug');
+      final document = html_parser.parse(html);
+      final history = _parseHistoryResultsFromModernPage(
+        document,
+        lotteryType,
+      );
+
+      if (history.isNotEmpty) {
+        if (limit <= 0 || history.length <= limit) {
+          return history;
+        }
+        return history.take(limit).toList();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[NLB] history page parse failed type=${lotteryType.name} err=$e');
+      }
+    }
+
+    // Fallback to latest-only endpoint.
+    final latest = await fetchLatestResult(lotteryType);
+    return [latest];
   }
 
   /// Fetch the latest results list shown on NLB results page (all lotteries on that page).
@@ -178,6 +237,9 @@ class LotteryResultsService {
 
   String _nlbLotterySlug(LotteryType type) {
     switch (type) {
+      case LotteryType.adaKotipathi:
+        // DLB-only lottery.
+        return '';
       case LotteryType.adaSampatha:
         return 'ada-sampatha';
       case LotteryType.daruDiriSampatha:
@@ -348,6 +410,408 @@ class LotteryResultsService {
       debugPrint('[NLB] parseAll: results count=${results.length}');
     }
     return results;
+  }
+
+  List<LotteryResult> _parseHistoryResultsFromModernPage(
+    dom.Document document,
+    LotteryType requestedType,
+  ) {
+    final parsedFromTable = _parseHistoryRowsFromTable(document, requestedType);
+    if (parsedFromTable.isNotEmpty) {
+      return parsedFromTable;
+    }
+
+    final lines = (document.body?.text ?? '')
+        .split('\n')
+        .map((line) => line.replaceAll(RegExp(r'\s+'), ' ').trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+
+    if (kDebugMode) {
+      debugPrint('[NLB] parseHistory: lines=${lines.length} type=${requestedType.name}');
+    }
+
+    final config = LotteryConfig.getConfig(requestedType);
+    final seenDraws = <int>{};
+    final parsed = <LotteryResult>[];
+    var i = 0;
+
+    while (i < lines.length) {
+      final headerLine = lines[i];
+      final drawNumber = _extractNlbHistoryDrawNumber(headerLine);
+      if (drawNumber == null || drawNumber <= 0) {
+        i++;
+        continue;
+      }
+
+      var drawDate = _tryParseNlbHistoryDate(headerLine);
+      var consumedHeaderLines = 1;
+      if (drawDate == null && i + 1 < lines.length) {
+        drawDate = _tryParseNlbHistoryDate(lines[i + 1]);
+        if (drawDate != null) {
+          consumedHeaderLines = 2;
+        }
+      }
+
+      if (drawDate == null) {
+        i++;
+        continue;
+      }
+
+      final valueTokens = <String>[];
+      valueTokens.addAll(
+        _extractInlineNlbHistoryTokens(headerLine, drawNumber),
+      );
+      if (consumedHeaderLines == 2 && i + 1 < lines.length) {
+        valueTokens.addAll(
+          _extractInlineNlbHistoryTokens(lines[i + 1], drawNumber),
+        );
+      }
+
+      i += consumedHeaderLines;
+      while (i < lines.length) {
+        final line = lines[i];
+        if (_extractNlbHistoryDrawNumber(line) != null &&
+            _tryParseNlbHistoryDate(line) != null) {
+          break;
+        }
+        if (_extractNlbHistoryDrawNumber(line) != null &&
+            i + 1 < lines.length &&
+            _tryParseNlbHistoryDate(lines[i + 1]) != null) {
+          break;
+        }
+        if (line.toUpperCase() == 'MORE') {
+          i++;
+          break;
+        }
+        valueTokens.addAll(_tokenizeNlbHistoryValueLine(line));
+        i++;
+      }
+
+      if (!seenDraws.add(drawNumber)) continue;
+      final values = _parseNlbHistoryTokens(
+        valueTokens,
+        lotteryType: requestedType,
+      );
+      final winningNumbers = config == null
+          ? values.numbers
+          : values.numbers.take(config.numbersCount).toList();
+      if (winningNumbers.isEmpty) continue;
+
+      parsed.add(
+        LotteryResult(
+          id: '${requestedType.name}_$drawNumber',
+          lotteryType: requestedType,
+          drawNumber: drawNumber,
+          drawDate: drawDate,
+          winningNumbers: winningNumbers,
+          luckyLetter: values.sign,
+          prizes: {
+            for (final p in (config?.prizes ?? const <Prize>[]))
+              p.name: p.estimatedAmount,
+          },
+          fetchedAt: DateTime.now(),
+        ),
+      );
+    }
+
+    parsed.sort((a, b) {
+      final byDate = b.drawDate.compareTo(a.drawDate);
+      if (byDate != 0) return byDate;
+      return b.drawNumber.compareTo(a.drawNumber);
+    });
+    if (kDebugMode) {
+      debugPrint('[NLB] parseHistory: parsed=${parsed.length} type=${requestedType.name}');
+    }
+    return parsed;
+  }
+
+  List<String> _extractInlineNlbHistoryTokens(String line, int drawNumber) {
+    var cleaned = line;
+    cleaned = cleaned.replaceAll(
+      RegExp(r'Draw\s*Number\s*-?', caseSensitive: false),
+      ' ',
+    );
+    cleaned = cleaned.replaceFirst(RegExp(r'^\s*\d{3,6}'), ' ');
+    cleaned = cleaned.replaceAll(
+      RegExp('$drawNumber'),
+      ' ',
+    );
+    cleaned = cleaned.replaceAll(
+      RegExp(
+        r'(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)\s+[A-Za-z]+\s+\d{1,2},\s+\d{4}',
+        caseSensitive: false,
+      ),
+      ' ',
+    );
+    cleaned = cleaned.replaceAll(
+      RegExp(
+        r'[A-Za-z]+\s+\d{1,2},\s+\d{4}',
+        caseSensitive: false,
+      ),
+      ' ',
+    );
+    cleaned = cleaned.replaceAll(
+      RegExp(
+        r'\d{4}-[A-Za-z]{3}-\d{1,2}\s+(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)',
+        caseSensitive: false,
+      ),
+      ' ',
+    );
+    cleaned = cleaned.replaceAll(
+      RegExp(r'\b(More|Results|DrawDate|Promotional|Draw)\b', caseSensitive: false),
+      ' ',
+    );
+
+    return _tokenizeNlbHistoryValueLine(cleaned);
+  }
+
+  List<LotteryResult> _parseHistoryRowsFromTable(
+    dom.Document document,
+    LotteryType requestedType,
+  ) {
+    final rows = document.querySelectorAll('tr');
+    if (rows.isEmpty) return const [];
+
+    final config = LotteryConfig.getConfig(requestedType);
+    final seenDraws = <int>{};
+    final parsed = <LotteryResult>[];
+
+    for (final row in rows) {
+      final cells = row.querySelectorAll('td');
+      final rowText = row.text.replaceAll(RegExp(r'\s+'), ' ').trim();
+      if (rowText.isEmpty) continue;
+
+      final drawCellText = cells.isNotEmpty
+          ? cells[0].text.replaceAll(RegExp(r'\s+'), ' ').trim()
+          : rowText;
+      final drawNumber = _extractNlbHistoryDrawNumber(drawCellText.isEmpty ? rowText : drawCellText);
+      if (drawNumber == null || drawNumber <= 0) continue;
+
+      final drawDate = _tryParseNlbHistoryDate(drawCellText.isEmpty ? rowText : drawCellText) ??
+          _tryParseNlbHistoryDate(rowText);
+      if (drawDate == null) continue;
+      if (!seenDraws.add(drawNumber)) continue;
+
+      final tokens = <String>[];
+      if (cells.length >= 2) {
+        final valueCell = cells[1];
+        final taggedNodes = valueCell.querySelectorAll('li, span, div, p, b, strong');
+        if (taggedNodes.isNotEmpty) {
+          for (final node in taggedNodes) {
+            tokens.addAll(_tokenizeNlbHistoryValueLine(node.text));
+          }
+        } else {
+          tokens.addAll(_tokenizeNlbHistoryValueLine(valueCell.text));
+        }
+      } else {
+        tokens.addAll(_extractInlineNlbHistoryTokens(rowText, drawNumber));
+      }
+
+      final values = _parseNlbHistoryTokens(
+        tokens,
+        lotteryType: requestedType,
+      );
+      final winningNumbers = config == null
+          ? values.numbers
+          : values.numbers.take(config.numbersCount).toList();
+      if (winningNumbers.isEmpty) continue;
+
+      parsed.add(
+        LotteryResult(
+          id: '${requestedType.name}_$drawNumber',
+          lotteryType: requestedType,
+          drawNumber: drawNumber,
+          drawDate: drawDate,
+          winningNumbers: winningNumbers,
+          luckyLetter: values.sign,
+          prizes: {
+            for (final p in (config?.prizes ?? const <Prize>[]))
+              p.name: p.estimatedAmount,
+          },
+          fetchedAt: DateTime.now(),
+        ),
+      );
+    }
+
+    parsed.sort((a, b) {
+      final byDate = b.drawDate.compareTo(a.drawDate);
+      if (byDate != 0) return byDate;
+      return b.drawNumber.compareTo(a.drawNumber);
+    });
+    if (kDebugMode) {
+      debugPrint(
+        '[NLB] parseHistoryTable: rows=${rows.length} parsed=${parsed.length} type=${requestedType.name}',
+      );
+      if (parsed.isEmpty) {
+        final preview = rows
+            .take(6)
+            .map(
+              (r) => r.text.replaceAll(RegExp(r'\s+'), ' ').trim(),
+            )
+            .where((t) => t.isNotEmpty)
+            .toList();
+        if (preview.isNotEmpty) {
+          debugPrint('[NLB] parseHistoryTable preview: ${preview.join(' || ')}');
+        }
+      }
+    }
+    return parsed;
+  }
+
+  int? _extractNlbHistoryDrawNumber(String input) {
+    final matches = RegExp(r'(\d{3,6})').allMatches(input);
+    for (final match in matches) {
+      final value = int.tryParse(match.group(1)!);
+      if (value == null) continue;
+      // Avoid accidentally taking the year.
+      if (value >= 1900 && value <= 2100) continue;
+      return value;
+    }
+    return null;
+  }
+
+  DateTime? _tryParseNlbHistoryDate(String input) {
+    final cleaned = input.replaceAll(RegExp(r'\s+'), ' ').trim();
+    final candidates = <String>{
+      cleaned,
+    };
+
+    final englishDate = RegExp(
+      r'(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)\s+[A-Za-z]+\s+\d{1,2},\s+\d{4}',
+      caseSensitive: false,
+    ).firstMatch(cleaned);
+    if (englishDate != null) {
+      candidates.add(englishDate.group(0)!);
+    }
+
+    final monthDate = RegExp(
+      r'[A-Za-z]+\s+\d{1,2},\s+\d{4}',
+      caseSensitive: false,
+    ).firstMatch(cleaned);
+    if (monthDate != null) {
+      candidates.add(monthDate.group(0)!);
+    }
+
+    final isoLike = RegExp(
+      r'\d{4}-[A-Za-z]{3}-\d{1,2}\s+(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)',
+      caseSensitive: false,
+    ).firstMatch(cleaned);
+    if (isoLike != null) {
+      candidates.add(isoLike.group(0)!);
+    }
+
+    const formats = [
+      'EEEE MMMM d, y',
+      'MMMM d, y',
+      'yyyy-MMM-dd EEEE',
+    ];
+
+    for (final candidate in candidates) {
+      for (final fmt in formats) {
+        try {
+          return DateFormat(fmt, 'en_US').parseStrict(candidate);
+        } catch (_) {}
+      }
+    }
+    return null;
+  }
+
+  List<String> _tokenizeNlbHistoryValueLine(String line) {
+    final cleaned = line.replaceAll(RegExp(r'[^A-Za-z0-9 ]'), ' ');
+    return cleaned
+        .split(RegExp(r'\s+'))
+        .map((t) => t.trim())
+        .where((t) => t.isNotEmpty)
+        .toList();
+  }
+
+  _NlbParsedValues _parseNlbHistoryTokens(
+    List<String> tokens, {
+    LotteryType? lotteryType,
+  }) {
+    final numbers = <int>[];
+    String? sign;
+    final expectedCount = lotteryType == null
+        ? null
+        : LotteryConfig.getConfig(lotteryType)?.numbersCount;
+
+    for (final raw in tokens) {
+      final token = raw.trim();
+      if (token.isEmpty) continue;
+
+      final n = int.tryParse(token);
+      if (n != null) {
+        if (n >= 0 && n <= 99) {
+          numbers.add(n);
+        } else if (RegExp(r'^\d+$').hasMatch(token)) {
+          _appendDigitSequence(
+            token,
+            expectedCount: expectedCount,
+            numbers: numbers,
+          );
+        }
+        continue;
+      }
+
+      final letterDigits = RegExp(r'^([A-Za-z]{1,16})(\d+)$').firstMatch(token);
+      if (letterDigits != null) {
+        sign ??= letterDigits.group(1);
+        _appendDigitSequence(
+          letterDigits.group(2)!,
+          expectedCount: expectedCount,
+          numbers: numbers,
+        );
+        continue;
+      }
+
+      final digitsLetters = RegExp(r'^(\d+)([A-Za-z]{1,16})$').firstMatch(token);
+      if (digitsLetters != null) {
+        _appendDigitSequence(
+          digitsLetters.group(1)!,
+          expectedCount: expectedCount,
+          numbers: numbers,
+        );
+        sign ??= digitsLetters.group(2);
+        continue;
+      }
+
+      final lower = token.toLowerCase();
+      if (_isIgnoredNlbLabel(lower)) continue;
+      sign ??= token;
+    }
+
+    return _NlbParsedValues(numbers: numbers, sign: sign);
+  }
+
+  void _appendDigitSequence(
+    String digits, {
+    required int? expectedCount,
+    required List<int> numbers,
+  }) {
+    if (digits.isEmpty) return;
+
+    if (expectedCount != null && digits.length == expectedCount) {
+      for (final code in digits.codeUnits) {
+        numbers.add(code - 48);
+      }
+      return;
+    }
+
+    if (expectedCount != null && digits.length == expectedCount * 2) {
+      for (var i = 0; i < digits.length; i += 2) {
+        final value = int.tryParse(digits.substring(i, i + 2));
+        if (value != null) {
+          numbers.add(value);
+        }
+      }
+      return;
+    }
+
+    // Fallback: parse one digit at a time when we cannot infer fixed-width groups.
+    for (final code in digits.codeUnits) {
+      numbers.add(code - 48);
+    }
   }
 
   _NlbParsedValues _extractNlbNumbersAndSign(dom.Element box) {

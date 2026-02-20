@@ -44,8 +44,27 @@ class LotteryHistoryService {
     return _syncNlb(type, draws);
   }
 
+  Future<List<LotteryResult>> getCachedHistory({
+    required LotteryType type,
+    int limit = 100,
+  }) async {
+    final all = await localDataSource.getAllResults();
+    final filtered = all.where((r) => r.lotteryType == type).toList()
+      ..sort((a, b) {
+        final byDate = b.drawDate.compareTo(a.drawDate);
+        if (byDate != 0) return byDate;
+        return b.drawNumber.compareTo(a.drawNumber);
+      });
+
+    if (limit <= 0 || filtered.length <= limit) {
+      return filtered;
+    }
+    return filtered.take(limit).toList();
+  }
+
   bool _isDlbType(LotteryType type) {
-    return type == LotteryType.shanida ||
+    return type == LotteryType.adaKotipathi ||
+        type == LotteryType.shanida ||
         type == LotteryType.lagnaWasana ||
         type == LotteryType.superBall;
   }
@@ -54,30 +73,33 @@ class LotteryHistoryService {
     LotteryType type,
     int draws,
   ) async {
-    final latest = await nlbResultsService.fetchLatestResult(type);
-    await localDataSource.cacheResult(latest);
+    var attempts = 0;
+    var saved = 0;
 
-    int saved = 1;
-    int attempts = 0;
-
-    final latestDraw = latest.drawNumber;
-    final maxAttempts = draws * 2;
-
-    for (int offset = 1; offset < draws && attempts < maxAttempts; offset++) {
-      final drawNumber = latestDraw - offset;
-      if (drawNumber <= 0) break;
+    try {
       attempts++;
-
-      try {
-        final result =
-            await nlbResultsService.fetchResultByDraw(type, drawNumber);
+      final history = await nlbResultsService.fetchHistoryResults(
+        type,
+        limit: draws,
+      );
+      if (history.isNotEmpty) {
+        await localDataSource.clearResultsByType(type);
+      }
+      for (final result in history) {
         await localDataSource.cacheResult(result);
         saved++;
-      } catch (e) {
-        if (kDebugMode) {
-          debugPrint('[HistorySync][NLB] miss draw=$drawNumber type=${type.name} err=$e');
-        }
       }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[HistorySync][NLB] history parse failed type=${type.name} err=$e');
+      }
+    }
+
+    if (saved == 0) {
+      attempts++;
+      final latest = await nlbResultsService.fetchLatestResult(type);
+      await localDataSource.cacheResult(latest);
+      saved = 1;
     }
 
     return HistorySyncReport(
@@ -85,7 +107,7 @@ class LotteryHistoryService {
       source: 'NLB',
       requested: draws,
       saved: saved,
-      attempts: attempts + 1,
+      attempts: attempts,
       pagesScanned: 0,
     );
   }
@@ -98,22 +120,123 @@ class LotteryHistoryService {
     int pagesScanned = 0;
     int attempts = 0;
     final seenDraws = <int>{};
+    var clearedTypeCache = false;
 
-    final maxPages = draws + 20;
-    for (int page = 1; page <= maxPages && saved < draws; page++) {
-      attempts++;
-      final pageResults = await dlbResultsService.fetchResultsPage(page);
-      pagesScanned++;
+    await localDataSource.clearResultsByType(type);
+    clearedTypeCache = true;
 
-      for (final item in pageResults) {
-        final mappedType = LotteryType.fromString(item.name);
-        if (mappedType != type) continue;
+    try {
+      final batch = await dlbResultsService.fetchHistoryForType(
+        type,
+        limit: draws,
+        maxPages: draws + 40,
+      );
+      attempts += batch.attempts;
+      pagesScanned += batch.pagesFetched;
+
+      if (batch.results.isNotEmpty) {
+        await localDataSource.clearResultsByType(type);
+        clearedTypeCache = true;
+      }
+      for (final item in batch.results) {
         if (!seenDraws.add(item.drawNumber)) continue;
-
-        final result = _toLotteryResult(mappedType, item);
+        final result = _toLotteryResult(type, item);
         await localDataSource.cacheResult(result);
         saved++;
-        break;
+        if (saved >= draws) break;
+      }
+
+      if (saved >= draws || saved > 0) {
+        return HistorySyncReport(
+          type: type,
+          source: 'DLB',
+          requested: draws,
+          saved: saved,
+          attempts: attempts,
+          pagesScanned: pagesScanned,
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[HistorySync][DLB] modern flow failed type=${type.name} err=$e');
+      }
+    }
+
+    final maxPages = draws + 20;
+    List<String> paths = const [];
+    try {
+      paths = await dlbResultsService.fetchHistoryPathsForType(
+        type,
+        maxPages: maxPages,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[HistorySync][DLB] failed to resolve history paths type=${type.name} err=$e');
+      }
+    }
+
+    if (paths.isEmpty) {
+      for (int page = 1; page <= maxPages && saved < draws; page++) {
+        attempts++;
+        List<DlbResultWithMeta> pageResults;
+        try {
+          pageResults = await dlbResultsService.fetchResultsPage(page);
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('[HistorySync][DLB] page=$page fetch failed type=${type.name} err=$e');
+          }
+          continue;
+        }
+
+        pagesScanned++;
+        for (final item in pageResults) {
+          final mappedType = LotteryType.fromString(item.name);
+          if (mappedType != LotteryType.unknown && mappedType != type) {
+            continue;
+          }
+          if (item.drawNumber <= 0) continue;
+          if (!seenDraws.add(item.drawNumber)) continue;
+          if (!clearedTypeCache) {
+            await localDataSource.clearResultsByType(type);
+            clearedTypeCache = true;
+          }
+          final result = _toLotteryResult(type, item);
+          await localDataSource.cacheResult(result);
+          saved++;
+          if (saved >= draws) break;
+        }
+      }
+    } else {
+      for (final path in paths) {
+        if (saved >= draws) break;
+        attempts++;
+        List<DlbResultWithMeta> pageResults;
+        try {
+          pageResults = await dlbResultsService.fetchResultsByPath(path);
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('[HistorySync][DLB] path=$path fetch failed type=${type.name} err=$e');
+          }
+          continue;
+        }
+
+        pagesScanned++;
+        for (final item in pageResults) {
+          final mappedType = LotteryType.fromString(item.name);
+          if (mappedType != LotteryType.unknown && mappedType != type) {
+            continue;
+          }
+          if (item.drawNumber <= 0) continue;
+          if (!seenDraws.add(item.drawNumber)) continue;
+          if (!clearedTypeCache) {
+            await localDataSource.clearResultsByType(type);
+            clearedTypeCache = true;
+          }
+          final result = _toLotteryResult(type, item);
+          await localDataSource.cacheResult(result);
+          saved++;
+          if (saved >= draws) break;
+        }
       }
     }
 

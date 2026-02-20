@@ -2,6 +2,7 @@ import 'package:lotto_vision/l10n/app_localizations.dart';
 
 /// Sri Lankan Lottery Types
 enum LotteryType {
+  adaKotipathi('Ada Kotipathi', 'lotteryAdaKotipathi'),
   adaSampatha('Ada Sampatha', 'lotteryAdaSampatha'),
   daruDiriSampatha('Daru Diri Sampatha', 'lotteryDaruDiriSampatha'),
   delakshapathi('Delakshapathi Double Dreams', 'lotteryDelakshapathi'),
@@ -35,9 +36,30 @@ enum LotteryType {
   static String _normalize(String s) =>
       s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
 
+  static final Map<String, LotteryType> _aliases = {
+    'adakotipathi': LotteryType.adaKotipathi,
+    'adasampatha': LotteryType.adaSampatha,
+    'mahajanasampatha': LotteryType.mahajana,
+    'subadawasak': LotteryType.subaDawasak,
+    'lagnavasana': LotteryType.lagnaWasana,
+    'lagnawasana': LotteryType.lagnaWasana,
+    'lagnasampatha': LotteryType.sampathaLagnaVarama,
+    'jayasampatha': LotteryType.nlbJaya,
+  };
+
   static LotteryType fromString(String name) {
     final n = _normalize(name);
     if (n.isEmpty) return LotteryType.unknown;
+
+    final directAlias = _aliases[n];
+    if (directAlias != null) return directAlias;
+
+    for (final entry in _aliases.entries) {
+      if (n.contains(entry.key) || entry.key.contains(n)) {
+        return entry.value;
+      }
+    }
+
     return LotteryType.values.firstWhere(
       (type) =>
           _normalize(type.displayName).contains(n) ||
@@ -49,6 +71,8 @@ enum LotteryType {
 
 String getLotteryDisplayName(LotteryType type, AppLocalizations l10n) {
   switch (type) {
+    case LotteryType.adaKotipathi:
+      return type.displayName;
     case LotteryType.adaSampatha:
       return l10n.lotteryAdaSampatha;
     case LotteryType.daruDiriSampatha:
@@ -118,6 +142,13 @@ class LotteryConfig {
   });
 
   static final Map<LotteryType, LotteryConfig> configs = {
+    LotteryType.adaKotipathi: const LotteryConfig(
+      type: LotteryType.adaKotipathi,
+      numbersCount: 4,
+      minNumber: 1,
+      maxNumber: 99,
+      prizes: [],
+    ),
     LotteryType.mahajana: const LotteryConfig(
       type: LotteryType.mahajana,
       numbersCount: 6,

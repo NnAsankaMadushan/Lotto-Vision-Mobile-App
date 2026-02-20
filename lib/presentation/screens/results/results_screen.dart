@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:lotto_vision/core/di/injection_container.dart';
+import 'package:lotto_vision/l10n/app_localizations.dart';
+import 'package:lotto_vision/presentation/widgets/screen_theme.dart';
 import 'package:lotto_vision/services/lottery/dlb_results_service.dart';
 import 'package:lotto_vision/services/lottery/lottery_results_service.dart';
 
@@ -12,44 +14,57 @@ class ResultsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final resultsAsync = ref.watch(_latestResultsProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Latest Results'),
+        automaticallyImplyLeading: false,
+        leading: buildLottoBackButton(context),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        flexibleSpace: buildLottoAppBarGradient(context),
+        title: LottoBrandedAppBarTitle(
+          section: l10n.results,
+        ),
       ),
-      body: SafeArea(
-        child: resultsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => _EmptyState(
-            title: 'Failed to load results',
-            subtitle: e.toString(),
-            icon: Icons.error_outline,
-            onRetry: () => ref.invalidate(_latestResultsProvider),
-          ),
-          data: (results) {
-            if (results.isEmpty) {
-              return _EmptyState(
-                title: 'No results available',
-                subtitle: 'Pull to refresh or try again later',
-                icon: Icons.emoji_events_outlined,
-                onRetry: () => ref.invalidate(_latestResultsProvider),
-              );
-            }
+      body: LottoGradientBackground(
+        child: SafeArea(
+          child: resultsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => _EmptyState(
+              title: 'Failed to load results',
+              subtitle: e.toString(),
+              icon: Icons.error_outline,
+              onRetry: () => ref.invalidate(_latestResultsProvider),
+            ),
+            data: (results) {
+              if (results.isEmpty) {
+                return _EmptyState(
+                  title: 'No results available',
+                  subtitle: 'Pull to refresh or try again later',
+                  icon: Icons.emoji_events_outlined,
+                  onRetry: () => ref.invalidate(_latestResultsProvider),
+                );
+              }
 
-            return RefreshIndicator(
-              onRefresh: () async {
-                ref.invalidate(_latestResultsProvider);
-                await ref.read(_latestResultsProvider.future);
-              },
-              child: ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: results.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) =>
-                    _ResultCard(item: results[index]),
-              ),
-            );
-          },
+              return RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(_latestResultsProvider);
+                  await ref.read(_latestResultsProvider.future);
+                },
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: results.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) =>
+                      _ResultCard(item: results[index]),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

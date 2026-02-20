@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lotto_vision/core/constants/app_constants.dart';
-import 'package:lotto_vision/presentation/providers/theme_provider.dart';
-import 'package:lotto_vision/presentation/providers/locale_provider.dart';
 import 'package:lotto_vision/l10n/app_localizations.dart';
+import 'package:lotto_vision/presentation/providers/locale_provider.dart';
+import 'package:lotto_vision/presentation/providers/theme_provider.dart';
+import 'package:lotto_vision/presentation/screens/settings/licenses_screen.dart';
+import 'package:lotto_vision/presentation/widgets/screen_theme.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -27,77 +29,84 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.settings),
+        automaticallyImplyLeading: false,
+        leading: buildLottoBackButton(context),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        flexibleSpace: buildLottoAppBarGradient(context),
+        title: LottoBrandedAppBarTitle(
+          section: l10n.settings,
+        ),
       ),
-      body: SafeArea(
-        child: ListView(
-          children: [
-            const SizedBox(height: 8),
-            ListTile(
-              leading: const Icon(Icons.language),
-              title: Text(l10n.language),
-              subtitle: Text(
-                currentLocale != null
-                    ? ref.read(localeProvider.notifier).getLanguageName(currentLocale)
-                    : 'English',
+      body: LottoGradientBackground(
+        child: SafeArea(
+          child: ListView(
+            children: [
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Icon(Icons.language),
+                title: Text(l10n.language),
+                subtitle: Text(
+                  currentLocale != null
+                      ? ref
+                          .read(localeProvider.notifier)
+                          .getLanguageName(currentLocale)
+                      : 'English',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  _showLanguagePicker(context, ref, currentLocale);
+                },
               ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                _showLanguagePicker(context, ref, currentLocale);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.palette),
-              title: Text(l10n.theme),
-              subtitle: Text(getThemeLabel(currentTheme)),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                _showThemePicker(context, ref, currentTheme);
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: Text(l10n.about),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                showAboutDialog(
-                  context: context,
-                  applicationName: AppConstants.appName,
-                  applicationVersion: AppConstants.appVersion,
-                  applicationLegalese: '© 2024 LottoVision',
-                  children: [
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Sri Lankan Lottery Ticket Scanner & Result Checker',
-                    ),
-                  ],
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.policy_outlined),
-              title: const Text('Privacy Policy'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                // Show privacy policy
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.description_outlined),
-              title: const Text('Terms of Service'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                // Show terms
-              },
-            ),
-          ],
+              ListTile(
+                leading: const Icon(Icons.palette),
+                title: Text(l10n.theme),
+                subtitle: Text(getThemeLabel(currentTheme)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  _showThemePicker(context, ref, currentTheme);
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: Text(l10n.about),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  _showAboutSheet(context, l10n);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.policy_outlined),
+                title: const Text('Privacy Policy'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  // Show privacy policy
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.description_outlined),
+                title: const Text('Terms of Service'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  // Show terms
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  void _showLanguagePicker(BuildContext context, WidgetRef ref, Locale? currentLocale) {
+  void _showLanguagePicker(
+    BuildContext context,
+    WidgetRef ref,
+    Locale? currentLocale,
+  ) {
     final supportedLocales = [
       const Locale('en', ''),
       const Locale('si', ''),
@@ -111,8 +120,10 @@ class SettingsScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: supportedLocales.map((locale) {
-              final isSelected = currentLocale?.languageCode == locale.languageCode;
-              final languageName = ref.read(localeProvider.notifier).getLanguageName(locale);
+              final isSelected =
+                  currentLocale?.languageCode == locale.languageCode;
+              final languageName =
+                  ref.read(localeProvider.notifier).getLanguageName(locale);
 
               return ListTile(
                 leading: const Icon(Icons.language),
@@ -132,7 +143,11 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  void _showThemePicker(BuildContext context, WidgetRef ref, ThemeMode currentTheme) {
+  void _showThemePicker(
+    BuildContext context,
+    WidgetRef ref,
+    ThemeMode currentTheme,
+  ) {
     final l10n = AppLocalizations.of(context)!;
 
     showModalBottomSheet(
@@ -177,6 +192,57 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  void _showAboutSheet(BuildContext context, AppLocalizations l10n) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        final closeLabel = MaterialLocalizations.of(dialogContext).closeButtonLabel;
+
+        return AlertDialog(
+          title: Text(l10n.about),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                AppConstants.appName,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+              SizedBox(height: 4),
+              Text('Version ${AppConstants.appVersion}'),
+              SizedBox(height: 10),
+              Text('Sri Lankan Lottery Ticket Scanner & Result Checker'),
+              SizedBox(height: 10),
+              Text(
+                'Copyright (c) 2024-2026 LottoVision. Licensed under MIT.',
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: Text(closeLabel),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const BrandedLicensesScreen(),
+                  ),
+                );
+              },
+              child: const Text('View Licenses'),
+            ),
+          ],
         );
       },
     );

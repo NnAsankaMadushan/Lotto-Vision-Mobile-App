@@ -28,46 +28,144 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final navItems = _buildNavItems(l10n);
 
     return Scaffold(
+      extendBody: true,
       body: _screens[_currentIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home),
-            label: l10n.home,
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0B0D12),
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x33000000),
+                blurRadius: 20,
+                offset: Offset(0, 10),
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.emoji_events_outlined),
-            selectedIcon: const Icon(Icons.emoji_events),
-            label: l10n.results,
+          child: Row(
+            children: List.generate(navItems.length, (index) {
+              final item = navItems[index];
+              final selected = _currentIndex == index;
+
+                return Expanded(
+                  child: _buildNavItem(
+                    item: item,
+                    selected: selected,
+                    onTap: () {
+                      if (_currentIndex == index) return;
+                      setState(() {
+                        _currentIndex = index;
+                      });
+                    },
+                  ),
+              );
+            }),
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.history),
-            selectedIcon: const Icon(Icons.history),
-            label: l10n.history,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.show_chart),
-            selectedIcon: const Icon(Icons.show_chart),
-            label: 'Prediction',
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.settings_outlined),
-            selectedIcon: const Icon(Icons.settings),
-            label: l10n.settings,
-          ),
-        ],
+        ),
       ),
     );
   }
+
+  List<_BottomNavItem> _buildNavItems(AppLocalizations l10n) {
+    return [
+      _BottomNavItem(
+        icon: Icons.home_outlined,
+        selectedIcon: Icons.home,
+        label: l10n.home,
+      ),
+      _BottomNavItem(
+        icon: Icons.emoji_events_outlined,
+        selectedIcon: Icons.emoji_events,
+        label: l10n.results,
+      ),
+      _BottomNavItem(
+        icon: Icons.history,
+        selectedIcon: Icons.history,
+        label: l10n.history,
+      ),
+      _BottomNavItem(
+        icon: Icons.show_chart,
+        selectedIcon: Icons.show_chart,
+        label: 'Prediction',
+      ),
+      _BottomNavItem(
+        icon: Icons.settings_outlined,
+        selectedIcon: Icons.settings,
+        label: l10n.settings,
+      ),
+    ];
+  }
+
+  Widget _buildNavItem({
+    required _BottomNavItem item,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+                children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: selected ? Colors.white : Colors.transparent,
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    selected ? item.selectedIcon : item.icon,
+                    color: selected
+                        ? const Color(0xFF101218)
+                        : Colors.white.withOpacity(0.78),
+                    size: selected ? 26 : 21,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  item.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(selected ? 1 : 0.82),
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: 11,
+                    letterSpacing: 0.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomNavItem {
+  const _BottomNavItem({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
 }
 
 class HomeTab extends StatelessWidget {
@@ -127,17 +225,7 @@ class HomeTab extends StatelessWidget {
         ],
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              colorScheme.primary.withOpacity(0.08),
-              colorScheme.secondary.withOpacity(0.05),
-              colorScheme.surface,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        color: colorScheme.surface,
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
